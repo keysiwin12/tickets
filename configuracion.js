@@ -37,39 +37,47 @@ const CONFIG_SERVICIOS = {
         { nombre: "PIN", tipo: "text", obligatorio: true }
       ],
       responsable: 4
+    },
+    "Capacitación": {
+      campos: [
+        { nombre: "Cliente", tipo: "text", obligatorio: true },
+        { nombre: "Tema", tipo: "text", obligatorio: true },
+        { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+      ],
+      responsable: 4
     }
   },
 
   "Monitoreo": {
     "Acceso Operation Center": {
       campos: [
-        { nombre: "Usuario", tipo: "text", obligatorio: true }
+        { nombre: "Usuario X", tipo: "text", obligatorio: true }
       ],
       responsable: 2
     },
     "Creación de Organización": {
       campos: [
         { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
-        { nombre: "RUC", tipo: "text", obligatorio: true, patron: "^[0-9]{11}$", mensajeError: "RUC debe tener 11 dígitos" },
+        { nombre: "Ruc", tipo: "text", obligatorio: true, patron: "^[0-9]{11}$", mensajeError: "Ruc debe tener 11 dígitos" },
         { nombre: "Nombre encargado de telemetría", tipo: "text", obligatorio: true },
         { nombre: "Cargo", tipo: "text", obligatorio: true },
         { nombre: "Celular", tipo: "text", obligatorio: true },
         { nombre: "Email", tipo: "email", obligatorio: true },
-        { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Puede ingresar múltiples PINs separados por comas" }
+        { nombre: "PIN", tipo: "text", obligatorio: true }
       ],
       responsable: 2
     },
     "Añadir equipos a Organización": {
       campos: [
         { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
-        { nombre: "RUC", tipo: "text", obligatorio: true },
-        { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Múltiples PINs separados por comas" }
+        { nombre: "Ruc", tipo: "text", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true }
       ],
       responsable: 2
     },
     "Vincular Módem a equipo": {
       campos: [
-        { nombre: "PIN", tipo: "textlong", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Serie del Módem", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
       ],
@@ -78,8 +86,31 @@ const CONFIG_SERVICIOS = {
     "Constancia telemetría": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
-        { nombre: "RUC", tipo: "text", obligatorio: true },
-        { nombre: "PIN", tipo: "textlong", obligatorio: true },
+        { nombre: "Ruc", tipo: "text", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true },
+        { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+      ],
+      responsable: 2
+    },
+    "Soporte de conectividad": {
+      campos: [
+        { nombre: "Cliente", tipo: "text", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true },
+        { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+      ],
+      responsable: 2
+    },
+    "Asistencia remota": {
+      campos: [
+        { nombre: "Cliente", tipo: "text", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true }
+      ],
+      responsable: 2
+    },
+    "Capacitación": {
+      campos: [
+        { nombre: "Cliente", tipo: "text", obligatorio: true },
+        { nombre: "Tema", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
       ],
       responsable: 2
@@ -96,6 +127,7 @@ const CONFIG_SERVICIOS = {
     },
     "Capacitación": {
       campos: [
+        { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
       ],
@@ -108,6 +140,15 @@ const CONFIG_SERVICIOS = {
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
       ],
       responsable: 5
+    },
+    "Análisis de producto equivalente": {
+      campos: [
+        { nombre: "Fabricante", tipo: "text", obligatorio: true },
+        { nombre: "PIN", tipo: "text", obligatorio: true },
+        { nombre: "Compartimiento", tipo: "text", obligatorio: true },
+        { nombre: "Aceite original", tipo: "text", obligatorio: true }
+      ],
+      responsable: 5
     }
   },
 
@@ -116,7 +157,7 @@ const CONFIG_SERVICIOS = {
       campos: [
         { nombre: "Tipo de reporte", tipo: "text", obligatorio: true },
         { nombre: "Cliente", tipo: "text", obligatorio: true },
-        { nombre: "PIN", tipo: "textlong", obligatorio: true }
+        { nombre: "PIN", tipo: "text", obligatorio: true }
       ],
       responsable: 3
     },

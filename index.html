@@ -618,35 +618,42 @@
                 { nombre: "Modelo", tipo: "text", obligatorio: true },
                 { nombre: "PIN", tipo: "text", obligatorio: true }
               ]
+            },
+            "Capacitación": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "Tema", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
             }
           },
           "Monitoreo": {
             "Acceso Operation Center": {
               campos: [
-                { nombre: "Usuario", tipo: "text", obligatorio: true }
+                { nombre: "Usuario X", tipo: "text", obligatorio: true }
               ]
             },
             "Creación de Organización": {
               campos: [
                 { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
-                { nombre: "RUC", tipo: "text", obligatorio: true, patron: "^[0-9]{11}$", mensajeError: "RUC debe tener 11 dígitos" },
+                { nombre: "Ruc", tipo: "text", obligatorio: true, patron: "^[0-9]{11}$", mensajeError: "Ruc debe tener 11 dígitos" },
                 { nombre: "Nombre encargado de telemetría", tipo: "text", obligatorio: true },
                 { nombre: "Cargo", tipo: "text", obligatorio: true },
                 { nombre: "Celular", tipo: "text", obligatorio: true },
                 { nombre: "Email", tipo: "email", obligatorio: true },
-                { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Puede ingresar múltiples PINs separados por comas" }
+                { nombre: "PIN", tipo: "text", obligatorio: true }
               ]
             },
             "Añadir equipos a Organización": {
               campos: [
                 { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
-                { nombre: "RUC", tipo: "text", obligatorio: true },
-                { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Múltiples PINs separados por comas" }
+                { nombre: "Ruc", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true }
               ]
             },
             "Vincular Módem a equipo": {
               campos: [
-                { nombre: "PIN", tipo: "textlong", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
                 { nombre: "Serie del Módem", tipo: "text", obligatorio: true },
                 { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
               ]
@@ -654,8 +661,28 @@
             "Constancia telemetría": {
               campos: [
                 { nombre: "Cliente", tipo: "text", obligatorio: true },
-                { nombre: "RUC", tipo: "text", obligatorio: true },
-                { nombre: "PIN", tipo: "textlong", obligatorio: true },
+                { nombre: "Ruc", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Soporte de conectividad": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Asistencia remota": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true }
+              ]
+            },
+            "Capacitación": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "Tema", tipo: "text", obligatorio: true },
                 { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
               ]
             }
@@ -669,6 +696,7 @@
             },
             "Capacitación": {
               campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
                 { nombre: "Tema", tipo: "text", obligatorio: true },
                 { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
               ]
@@ -679,6 +707,14 @@
                 { nombre: "Producto a ofrecer", tipo: "text", obligatorio: true },
                 { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
               ]
+            },
+            "Análisis de producto equivalente": {
+              campos: [
+                { nombre: "Fabricante", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
+                { nombre: "Compartimiento", tipo: "text", obligatorio: true },
+                { nombre: "Aceite original", tipo: "text", obligatorio: true }
+              ]
             }
           },
           "Desarrollo": {
@@ -686,7 +722,7 @@
               campos: [
                 { nombre: "Tipo de reporte", tipo: "text", obligatorio: true },
                 { nombre: "Cliente", tipo: "text", obligatorio: true },
-                { nombre: "PIN", tipo: "textlong", obligatorio: true }
+                { nombre: "PIN", tipo: "text", obligatorio: true }
               ]
             },
             "Observación de reporte": {
