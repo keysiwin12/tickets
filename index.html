@@ -582,6 +582,122 @@
 
         // ⚡ Optimista total
         let pendingUpdates = {}; // { [id_solicitud]: { estado, comentario, prevEstado, ts } }
+
+        // Configuración de servicios y campos dinámicos
+        const CONFIG_SERVICIOS = {
+          "Contratos": {
+            "John Deere Protect": {
+              campos: [
+                { nombre: "Tipo de plan", tipo: "select", valores: ["Premium", "Periódico"], obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "Rango de horas", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Manuales": {
+              campos: [
+                { nombre: "Tipo de manual", tipo: "select", valores: ["Operación", "Partes"], obligatorio: true },
+                { nombre: "Modelo", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true },
+                { nombre: "Uso", tipo: "select", valores: ["Consulta", "Venta de equipo", "Otros"], obligatorio: true }
+              ]
+            },
+            "Seteo de precios": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "Contrato", tipo: "text", obligatorio: true },
+                { nombre: "Pedidos", tipo: "text", obligatorio: true },
+                { nombre: "PM", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Cartilla de mantenimiento": {
+              campos: [
+                { nombre: "Fabricante", tipo: "text", obligatorio: true },
+                { nombre: "Modelo", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "text", obligatorio: true }
+              ]
+            }
+          },
+          "Monitoreo": {
+            "Acceso Operation Center": {
+              campos: [
+                { nombre: "Usuario", tipo: "text", obligatorio: true }
+              ]
+            },
+            "Creación de Organización": {
+              campos: [
+                { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
+                { nombre: "RUC", tipo: "text", obligatorio: true, patron: "^[0-9]{11}$", mensajeError: "RUC debe tener 11 dígitos" },
+                { nombre: "Nombre encargado de telemetría", tipo: "text", obligatorio: true },
+                { nombre: "Cargo", tipo: "text", obligatorio: true },
+                { nombre: "Celular", tipo: "text", obligatorio: true },
+                { nombre: "Email", tipo: "email", obligatorio: true },
+                { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Puede ingresar múltiples PINs separados por comas" }
+              ]
+            },
+            "Añadir equipos a Organización": {
+              campos: [
+                { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
+                { nombre: "RUC", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "textlong", obligatorio: true, placeholder: "Múltiples PINs separados por comas" }
+              ]
+            },
+            "Vincular Módem a equipo": {
+              campos: [
+                { nombre: "PIN", tipo: "textlong", obligatorio: true },
+                { nombre: "Serie del Módem", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Constancia telemetría": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "RUC", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "textlong", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            }
+          },
+          "Tribología": {
+            "Análisis de muestra": {
+              campos: [
+                { nombre: "N° muestra", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Capacitación": {
+              campos: [
+                { nombre: "Tema", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            },
+            "Visita comercial": {
+              campos: [
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "Producto a ofrecer", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            }
+          },
+          "Desarrollo": {
+            "Solicitud de reporte": {
+              campos: [
+                { nombre: "Tipo de reporte", tipo: "text", obligatorio: true },
+                { nombre: "Cliente", tipo: "text", obligatorio: true },
+                { nombre: "PIN", tipo: "textlong", obligatorio: true }
+              ]
+            },
+            "Observación de reporte": {
+              campos: [
+                { nombre: "ID del reporte", tipo: "text", obligatorio: true },
+                { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
+              ]
+            }
+          }
+        };
+
         // Cargar datos cuando se carga la página
         window.onload = function() {
           google.script.run
@@ -792,50 +908,29 @@
 
                     <!-- Formulario -->
                     <div style="margin-top: 40px;">
-                        <!-- Campo Descripción -->
-                        <div style="margin-bottom: 25px;">
-                            <label for="descripcionServicio" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;">Descripción *</label>
-                            <textarea 
-                                id="descripcionServicio" 
-                                placeholder="Describe tu solicitud aquí..."
-                                required
-                                style="
-                                    width: 100%; 
-                                    padding: 12px; 
-                                    border: 1px solid #d1d5db; 
-                                    border-radius: 6px; 
-                                    font-family: inherit; 
-                                    font-size: 14px; 
-                                    resize: vertical; 
-                                    min-height: 100px; 
-                                    line-height: 1.5;
-                                    transition: border-color 0.2s, box-shadow 0.2s;
-                                "
-                                onfocus="this.style.borderColor='#4a90e2'; this.style.boxShadow='0 0 0 3px rgba(74, 144, 226, 0.1)'"
-                                onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
-                            ></textarea>
-                        </div>
+                        <!-- Campos dinámicos del servicio -->
+                        <div id="camposDinamicos"></div>
 
-                        <!-- Campo Archivo -->
+                        <!-- Campo Archivo (opcional para todos) -->
                         <div style="margin-bottom: 25px;">
                             <label for="archivoServicio" style="
-                                display: inline-flex; 
-                                align-items: center; 
-                                gap: 8px; 
-                                color: #4a90e2; 
-                                cursor: pointer; 
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 8px;
+                                color: #4a90e2;
+                                cursor: pointer;
                                 font-size: 14px;
                                 transition: color 0.2s;
                             "
                             onmouseover="this.style.color='#1976d2'"
                             onmouseout="this.style.color='#4a90e2'">
-                                Adjuntar un archivo 
+                                Adjuntar un archivo
                                 <span style="color: #9ca3af; font-size: 12px; font-weight: normal;">(Tamaño de archivo < 40 MB)</span>
                             </label>
-                            <input 
-                                type="file" 
-                                id="archivoServicio" 
-                                style="display: none;" 
+                            <input
+                                type="file"
+                                id="archivoServicio"
+                                style="display: none;"
                                 onchange="mostrarArchivoSeleccionado(this)"
                             >
                             <div id="archivoInfo" style="margin-top: 10px; padding: 8px 12px; background-color: #e3f2fd; border-radius: 4px; font-size: 12px; color: #1976d2; display: none;"></div>
@@ -883,9 +978,132 @@
                     </div>
                 </div>
             `;
-            
+
             // Agregar la vista al body
             document.body.appendChild(detalleContainer);
+
+            // Generar campos dinámicos según el servicio
+            const config = CONFIG_SERVICIOS[categoria.nombre]?.[servicio.nombre];
+            const contenedorCampos = document.getElementById('camposDinamicos');
+
+            if (config && config.campos) {
+                config.campos.forEach(campo => {
+                    const campoDiv = document.createElement('div');
+                    campoDiv.style.cssText = 'margin-bottom: 25px;';
+
+                    // Label
+                    const label = document.createElement('label');
+                    label.textContent = campo.nombre + (campo.obligatorio ? ' *' : '');
+                    label.style.cssText = 'display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;';
+                    label.setAttribute('for', 'campo_' + campo.nombre.replace(/\s+/g, '_'));
+                    campoDiv.appendChild(label);
+
+                    let input;
+
+                    // Generar input según tipo
+                    if (campo.tipo === 'select') {
+                        input = document.createElement('select');
+                        input.style.cssText = `
+                            width: 100%;
+                            padding: 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 6px;
+                            font-family: inherit;
+                            font-size: 14px;
+                            background-color: white;
+                            transition: border-color 0.2s, box-shadow 0.2s;
+                        `;
+
+                        // Opción placeholder
+                        const optionPlaceholder = document.createElement('option');
+                        optionPlaceholder.value = '';
+                        optionPlaceholder.textContent = 'Seleccionar...';
+                        input.appendChild(optionPlaceholder);
+
+                        // Opciones del select
+                        campo.valores.forEach(valor => {
+                            const option = document.createElement('option');
+                            option.value = valor;
+                            option.textContent = valor;
+                            input.appendChild(option);
+                        });
+
+                    } else if (campo.tipo === 'textarea' || campo.tipo === 'textlong') {
+                        input = document.createElement('textarea');
+                        input.rows = campo.tipo === 'textlong' ? 6 : 3;
+                        input.style.cssText = `
+                            width: 100%;
+                            padding: 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 6px;
+                            font-family: inherit;
+                            font-size: 14px;
+                            resize: vertical;
+                            line-height: 1.5;
+                            transition: border-color 0.2s, box-shadow 0.2s;
+                        `;
+                    } else {
+                        // text o email
+                        input = document.createElement('input');
+                        input.type = campo.tipo === 'email' ? 'email' : 'text';
+                        input.style.cssText = `
+                            width: 100%;
+                            padding: 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 6px;
+                            font-family: inherit;
+                            font-size: 14px;
+                            transition: border-color 0.2s, box-shadow 0.2s;
+                        `;
+                    }
+
+                    // Atributos comunes
+                    input.id = 'campo_' + campo.nombre.replace(/\s+/g, '_');
+                    input.name = campo.nombre;
+                    if (campo.obligatorio) input.required = true;
+                    if (campo.placeholder) input.placeholder = campo.placeholder;
+                    if (campo.patron) input.pattern = campo.patron;
+
+                    // Efectos de foco
+                    input.addEventListener('focus', function() {
+                        this.style.borderColor = '#4a90e2';
+                        this.style.boxShadow = '0 0 0 3px rgba(74, 144, 226, 0.1)';
+                    });
+                    input.addEventListener('blur', function() {
+                        this.style.borderColor = '#d1d5db';
+                        this.style.boxShadow = 'none';
+                    });
+
+                    campoDiv.appendChild(input);
+                    contenedorCampos.appendChild(campoDiv);
+                });
+            } else {
+                // Fallback: si no hay config, mostrar campo de descripción genérico
+                contenedorCampos.innerHTML = `
+                    <div style="margin-bottom: 25px;">
+                        <label for="descripcionServicio" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px;">Descripción *</label>
+                        <textarea
+                            id="descripcionServicio"
+                            placeholder="Describe tu solicitud aquí..."
+                            required
+                            style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 1px solid #d1d5db;
+                                border-radius: 6px;
+                                font-family: inherit;
+                                font-size: 14px;
+                                resize: vertical;
+                                min-height: 100px;
+                                line-height: 1.5;
+                                transition: border-color 0.2s, box-shadow 0.2s;
+                            "
+                            onfocus="this.style.borderColor='#4a90e2'; this.style.boxShadow='0 0 0 3px rgba(74, 144, 226, 0.1)'"
+                            onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                        ></textarea>
+                    </div>
+                `;
+            }
         }
 
         //Asignaciones responsables
@@ -1187,19 +1405,51 @@
 
         // Función enviarSolicitud mejorada
         function enviarSolicitud(servicioId, servicioNombre, categoriaId) {
-            const descripcion = document.getElementById('descripcionServicio').value.trim();
             const archivo = document.getElementById('archivoServicio').files[0];
 
-            // Validar descripción requerida
-            if (!descripcion) {
-                mostrarNotificacion('Por favor, ingresa una descripción para tu solicitud.', 'error');
-                document.getElementById('descripcionServicio').focus();
+            // Recoger valores de todos los campos dinámicos
+            const contenedorCampos = document.getElementById('camposDinamicos');
+            const inputs = contenedorCampos.querySelectorAll('input, select, textarea');
+            const datos = {};
+            let hayErrores = false;
+            let primerCampoConError = null;
+
+            inputs.forEach(input => {
+                const nombreCampo = input.name;
+                const valor = input.value.trim();
+
+                // Validar campos obligatorios
+                if (input.required && !valor) {
+                    hayErrores = true;
+                    input.style.borderColor = '#ef4444';
+                    if (!primerCampoConError) primerCampoConError = input;
+                } else {
+                    input.style.borderColor = '#d1d5db';
+                }
+
+                // Validar patrón si existe
+                if (input.pattern && valor && !new RegExp(input.pattern).test(valor)) {
+                    hayErrores = true;
+                    input.style.borderColor = '#ef4444';
+                    if (!primerCampoConError) primerCampoConError = input;
+                }
+
+                datos[nombreCampo] = valor;
+            });
+
+            // Si hay errores, mostrar notificación y enfocar primer campo con error
+            if (hayErrores) {
+                mostrarNotificacion('Por favor, completa todos los campos obligatorios correctamente.', 'error');
+                if (primerCampoConError) primerCampoConError.focus();
                 return;
             }
 
+            // Convertir datos a JSON
+            const descripcionJSON = JSON.stringify(datos);
+
             // Volver al catálogo inmediatamente
             volverAlCatalogo();
-            
+
             // Mostrar notificación de procesamiento
             mostrarNotificacion('Enviando solicitud...', 'info');
 
@@ -1210,7 +1460,7 @@
                     const solicitud = {
                         id_asunto: servicioId,
                         servicio_nombre: servicioNombre,
-                        descripcion: descripcion,
+                        descripcion: descripcionJSON,
                         archivo_nombre: archivo.name,
                         archivo_base64: base64,
                         estado: 'Pendiente',
@@ -1220,7 +1470,7 @@
                     google.script.run
                         .withSuccessHandler(() => {
                             mostrarNotificacion("Solicitud enviada con archivo 👍", 'success');
-                            solicitudesCache = null;   // ❗ invalidar cache
+                            solicitudesCache = null;
                             google.script.run
                             .withSuccessHandler(function(solicitudes){ solicitudesCache = solicitudes; })
                             .withFailureHandler(err => console.error("Error precargando solicitudes:", err))
@@ -1228,7 +1478,7 @@
                         })
                         .withFailureHandler(err => {
                             mostrarNotificacion("Error: " + err.message, 'error');
-                            solicitudesCache = null;   // invalidar cache
+                            solicitudesCache = null;
                         })
                         .crearSolicitud(solicitud);
                 };
@@ -1237,7 +1487,7 @@
                 const solicitud = {
                     id_asunto: servicioId,
                     servicio_nombre: servicioNombre,
-                    descripcion: descripcion,
+                    descripcion: descripcionJSON,
                     archivo_nombre: null,
                     archivo_base64: null,
                     estado: 'Pendiente',
@@ -1247,8 +1497,7 @@
                 google.script.run
                     .withSuccessHandler(() => {
                         mostrarNotificacion("Solicitud enviada 👍", 'success');
-                        solicitudesCache = null;   // ❗ invalidar cache
-                        // precargar en segundo plano para que esté lista cuando abras "Mis Solicitudes"
+                        solicitudesCache = null;
                         google.script.run
                           .withSuccessHandler(function(solicitudes){ solicitudesCache = solicitudes; })
                           .withFailureHandler(err => console.error("Error precargando solicitudes:", err))
@@ -1256,7 +1505,7 @@
                     })
                     .withFailureHandler(err => {
                         mostrarNotificacion("Error: " + err.message, 'error');
-                        solicitudesCache = null;   // también inválida si falla
+                        solicitudesCache = null;
                     })
                     .crearSolicitud(solicitud);
             }

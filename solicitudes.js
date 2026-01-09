@@ -31,16 +31,8 @@ function crearSolicitud(solicitud) {
     archivo : 6
   };
 
-  // id_categoria  // id_resposable
-  const dic_responsables = {
-    1 : 4,  
-    2 : 2,
-    3 : 5,
-    4 : 4,
-    5 : 3 // cambiar al 5 ,ahora esta en keysi
-  }
-  
-  solicitud.responsable = dic_responsables[solicitud.categoria] || null; 
+  // Obtener responsable desde configuracion.js según categoría y servicio
+  solicitud.responsable = obtenerResponsablePorServicio(solicitud.categoria, solicitud.id_asunto) || null; 
   solicitud.id_usuario = userEmail;
   solicitud.archivo = urlArchivo;
   solicitud.fecha_solicitud = new Date();

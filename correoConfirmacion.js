@@ -1,14 +1,51 @@
+// Función helper para formatear descripción (JSON o texto plano)
+function formatearDescripcion(descripcion) {
+  if (!descripcion) return 'Sin descripción';
+
+  try {
+    // Intentar parsear como JSON
+    const datos = JSON.parse(descripcion);
+
+    // Si es un objeto, formatear como lista
+    if (typeof datos === 'object' && datos !== null) {
+      let html = '';
+      for (const [campo, valor] of Object.entries(datos)) {
+        const valorEscapado = String(valor || 'No especificado')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+        html += `<li><strong>${campo}:</strong> ${valorEscapado}</li>`;
+      }
+      return html;
+    }
+  } catch (e) {
+    // No es JSON válido, devolver como texto escapado
+  }
+
+  // Texto plano (legacy): escapar HTML
+  const textoEscapado = String(descripcion)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  return textoEscapado;
+}
+
 function generarCorreoTicketUsuario(solicitud) {
+  const descripcionHTML = formatearDescripcion(solicitud.descripcion);
 
   return `<div style="font-size: 15px; color: #333; line-height: 1.6; text-align: justify; max-width: 700px;">
     <p>
       <img src="cid:imgArriba" alt="Cabecera CSC" width="350">
     </p>
-    
+
     <p>Estimado(a) usuario(a),</p>
-    
+
     <p>El <strong>Centro de Soluciones Conectadas (CSC)</strong> de <strong>IPESA</strong> le informa que su ticket de soporte ha sido <strong>generado exitosamente</strong> en nuestro sistema.</p>
-    
+
     <p><strong>Detalles de su solicitud:</strong></p>
     <ul style="margin-left: 20px;">
       <li><strong>Número de Ticket:</strong> ${solicitud.id_solicitud}</li>
@@ -16,16 +53,20 @@ function generarCorreoTicketUsuario(solicitud) {
       <li><strong>Fecha de Creación:</strong>  ${ Utilities.formatDate(solicitud.fecha_creacion, "GMT-5", "dd/MM/yyyy HH:mm:ss")}</li>
       <li><strong>Estado Actual:</strong> ${solicitud.estado_actual}</li>
       <li><strong>Responsable Asignado:</strong> ${solicitud.responsable_csc}</li>
-      <li><strong>Descripción:</strong> ${solicitud.descripcion}</li>
     </ul>
-    
+
+    <p><strong>Detalles del Servicio:</strong></p>
+    <ul style="margin-left: 20px;">
+      ${descripcionHTML}
+    </ul>
+
     <p>Agradecemos su confianza y quedamos atentos a cualquier requerimiento adicional que pueda surgir.</p>
-    
+
     <p>Atentamente,</p>
-    
+
     <p><strong>Centro de Soluciones Conectadas</strong><br>
     <a href="mailto:SolucionesIntegradas@ipesa.com.pe">SolucionesIntegradas@ipesa.com.pe</a> | 942 018 896</p>
-    
+
     <p>
       <img src="cid:imgAbajo" alt="Pie CSC" width="350">
     </p>
@@ -33,12 +74,14 @@ function generarCorreoTicketUsuario(solicitud) {
 }
 
 function generarCorreoTicketResponsable(solicitud, responsable) {
+  const descripcionHTML = formatearDescripcion(solicitud.descripcion);
+
   return `<div style="font-size: 15px; color: #333; line-height: 1.6; text-align: justify; max-width: 700px;">
     <p><img src="cid:imgArriba" alt="Cabecera CSC" width="350"></p>
-    
+
     <p>Estimado(a) <strong>${responsable.nombre}</strong>,</p>
     <p>Se le ha <strong>asignado una nueva solicitud</strong> en el sistema del <strong>CSC IPESA</strong>.</p>
-    
+
     <p><strong>Detalles de la solicitud asignada:</strong></p>
     <ul style="margin-left: 20px;">
       <li><strong>Número de Ticket:</strong> ${solicitud.id_solicitud}</li>
@@ -46,18 +89,22 @@ function generarCorreoTicketResponsable(solicitud, responsable) {
       <li><strong>Categoría de Servicio:</strong> ${solicitud.categoriaDescripcion} - ${solicitud.asuntoDescripcion}</li>
       <li><strong>Fecha de Creación:</strong> ${Utilities.formatDate(solicitud.fecha_creacion, "GMT-5", "dd/MM/yyyy HH:mm:ss")}</li>
       <li><strong>Estado Actual:</strong> ${solicitud.estado_actual}</li>
-      ${solicitud.documento 
-        ? `<li><strong>Documento Adjunto:</strong> <a href="${solicitud.documento}" target="_blank">Ver Documento</a></li>` 
+      ${solicitud.documento
+        ? `<li><strong>Documento Adjunto:</strong> <a href="${solicitud.documento}" target="_blank">Ver Documento</a></li>`
         : ""}
-      <li><strong>Descripción:</strong> ${solicitud.descripcion}</li>
+    </ul>
+
+    <p><strong>Detalles del Servicio:</strong></p>
+    <ul style="margin-left: 20px;">
+      ${descripcionHTML}
     </ul>
 
     <p>Por favor, revise esta solicitud a la brevedad y registre el seguimiento correspondiente.</p>
-    
+
     <p>Atentamente,</p>
     <p><strong>Centro de Soluciones Conectadas</strong><br>
     <a href="mailto:SolucionesIntegradas@ipesa.com.pe">SolucionesIntegradas@ipesa.com.pe</a> | 942 018 896</p>
-    
+
     <p><img src="cid:imgAbajo" alt="Pie CSC" width="350"></p>
   </div>`;
 }
@@ -187,6 +234,9 @@ function enviarCorreoCambioEstado(id_solicitud, nuevoEstado, comentario) {
       ? Utilities.formatDate(solicitud.fecha_creacion, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss")
       : solicitud.fecha_creacion;
 
+    // Formatear descripción
+    const descripcionHTML = formatearDescripcion(solicitud.descripcion);
+
     // Cuerpo HTML del correo
     const cuerpo = `
       <div style="font-size: 15px; color: #333; line-height: 1.6; text-align: justify; max-width: 700px;">
@@ -202,10 +252,15 @@ function enviarCorreoCambioEstado(id_solicitud, nuevoEstado, comentario) {
           <li><strong>Fecha de Creación:</strong> ${fechaFormateada}</li>
           <li><strong>Estado Actual:</strong> ${nuevoEstado}</li>
           <li><strong>Responsable:</strong> ${solicitud.responsable_csc}</li>
-          <li><strong>Descripción:</strong> ${solicitud.descripcion}</li>
-          <li><strong>Comentario:</strong> ${comentarioFinal}</li>
-          
         </ul>
+
+        <p><strong>Detalles del Servicio:</strong></p>
+        <ul style="margin-left: 20px;">
+          ${descripcionHTML}
+        </ul>
+
+        <p><strong>Comentario del cierre:</strong></p>
+        <p style="margin-left: 20px; font-style: italic;">${comentarioFinal}</p>
 
         <p>Para cualquier consulta adicional, recuerda indicar el <strong>número de ticket ${solicitud.id_solicitud}</strong>.</p>
 
