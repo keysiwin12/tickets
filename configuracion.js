@@ -38,7 +38,7 @@ const CONFIG_SERVICIOS = {
       ],
       responsable: 4
     },
-    "Capacitación": {
+    "📚 Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
@@ -107,7 +107,7 @@ const CONFIG_SERVICIOS = {
       ],
       responsable: 2
     },
-    "Capacitación": {
+    "🖥️ Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
@@ -125,7 +125,7 @@ const CONFIG_SERVICIOS = {
       ],
       responsable: 5
     },
-    "Capacitación": {
+    "🔬 Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
