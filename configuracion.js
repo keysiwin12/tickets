@@ -100,7 +100,7 @@ const CONFIG_SERVICIOS = {
       ],
       responsable: 2
     },
-    "Asistencia remota": {
+    "Asistencia Remota": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
