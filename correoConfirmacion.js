@@ -136,8 +136,8 @@ function enviarCorreoConfirmacion(id_solicitud) {
     solicitud.responsable_csc = responsableMenu?.nombre || "";
 
     const correoUsuario = solicitud.id_usuario;
-    //const correoResponsable = responsableMenu?.correo || null;
-    const correoResponsable = "ksimbron@ipesa.com.pe";
+    const correoResponsable = responsableMenu?.correo || null;
+
     if (!correoUsuario) {
       throw new Error(`No se encontró correo del usuario con ID: ${solicitud.id_usuario}`);
     }
