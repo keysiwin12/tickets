@@ -8,8 +8,7 @@ const CONFIG_SERVICIOS = {
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Rango de horas", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 4
+      ]
     },
     "Manuales": {
       campos: [
@@ -17,8 +16,7 @@ const CONFIG_SERVICIOS = {
         { nombre: "Modelo", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Uso", tipo: "select", valores: ["Consulta", "Venta de equipo", "Otros"], obligatorio: true }
-      ],
-      responsable: 4
+      ]
     },
     "Seteo de precios": {
       campos: [
@@ -27,24 +25,21 @@ const CONFIG_SERVICIOS = {
         { nombre: "Pedidos", tipo: "text", obligatorio: true },
         { nombre: "PM", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 4
+      ]
     },
     "Cartilla de mantenimiento": {
       campos: [
         { nombre: "Fabricante", tipo: "text", obligatorio: true },
         { nombre: "Modelo", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
-      ],
-      responsable: 4
+      ]
     },
     "📚 Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 4
+      ]
     }
   },
 
@@ -52,8 +47,7 @@ const CONFIG_SERVICIOS = {
     "Acceso Operation Center": {
       campos: [
         { nombre: "Usuario X", tipo: "text", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Creación de Organización": {
       campos: [
@@ -64,24 +58,21 @@ const CONFIG_SERVICIOS = {
         { nombre: "Celular", tipo: "text", obligatorio: true },
         { nombre: "Email", tipo: "email", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Añadir equipos a Organización": {
       campos: [
         { nombre: "Nombre de la empresa", tipo: "text", obligatorio: true },
         { nombre: "Ruc", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Vincular Módem a equipo": {
       campos: [
         { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Serie del Módem", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Constancia telemetría": {
       campos: [
@@ -89,31 +80,27 @@ const CONFIG_SERVICIOS = {
         { nombre: "Ruc", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Soporte de conectividad": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "Asistencia Remota": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     },
     "🖥️ Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 2
+      ]
     }
   },
 
@@ -122,24 +109,21 @@ const CONFIG_SERVICIOS = {
       campos: [
         { nombre: "N° muestra", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 5
+      ]
     },
     "🔬 Capacitación": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Tema", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 5
+      ]
     },
     "Visita comercial": {
       campos: [
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "Producto a ofrecer", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 5
+      ]
     },
     "Análisis de producto equivalente": {
       campos: [
@@ -147,8 +131,7 @@ const CONFIG_SERVICIOS = {
         { nombre: "PIN", tipo: "text", obligatorio: true },
         { nombre: "Compartimiento", tipo: "text", obligatorio: true },
         { nombre: "Aceite original", tipo: "text", obligatorio: true }
-      ],
-      responsable: 5
+      ]
     }
   },
 
@@ -158,15 +141,13 @@ const CONFIG_SERVICIOS = {
         { nombre: "Tipo de reporte", tipo: "text", obligatorio: true },
         { nombre: "Cliente", tipo: "text", obligatorio: true },
         { nombre: "PIN", tipo: "text", obligatorio: true }
-      ],
-      responsable: 3
+      ]
     },
     "Observación de reporte": {
       campos: [
         { nombre: "ID del reporte", tipo: "text", obligatorio: true },
         { nombre: "Observaciones", tipo: "textarea", obligatorio: true }
-      ],
-      responsable: 3
+      ]
     }
   }
 };
@@ -190,10 +171,11 @@ function obtenerConfigServicio(categoriaId, asuntoId) {
   return CONFIG_SERVICIOS[categoriaNombre]?.[asuntoNombre] || null;
 }
 
-// Función para obtener responsable según categoría y servicio
+// Función para obtener responsable según categoría
 function obtenerResponsablePorServicio(categoriaId, asuntoId) {
-  const config = obtenerConfigServicio(categoriaId, asuntoId);
-  return config ? config.responsable : null;
+  const categorias = getCategorias();
+  const categoria = categorias.find(c => c.id == categoriaId);
+  return categoria ? categoria.id_responsable : null;
 }
 
 // Función para validar datos de solicitud

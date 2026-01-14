@@ -33,7 +33,8 @@ function getCategorias() {
     return data.map(row => ({
       id: row["id_categoria"],
       nombre: row["nombre"],
-      descripcion: row["descripcion"]
+      descripcion: row["descripcion"],
+      id_responsable: row["id_responsable"]
     }));
   } catch (error) {
     Logger.log("Error al obtener categorías: " + error);
