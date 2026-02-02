@@ -1,4 +1,18 @@
+// =======================================================
+// Configuración de Google Drive
+// =======================================================
+const CONFIG_DRIVE = {
+  // Carpeta donde se guardan los archivos adjuntos de las solicitudes
+  carpetaArchivos: "1J9jFrcG_KGcG9dvcmxiFhhbUnEvOsdUn",
+
+  // Imágenes para correos electrónicos
+  imagenCabecera: "1kVOqEsE2e2t7r_ZxGWBHNEg6pdI9bMPT",
+  imagenPie: "1JxcYdB7ZFHZi1CGk5SgVtoB6ir74rnbF"
+};
+
+// =======================================================
 // Configuración de servicios y campos dinámicos
+// =======================================================
 const CONFIG_SERVICIOS = {
   "Contratos": {
     "John Deere Protect": {

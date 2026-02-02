@@ -142,41 +142,60 @@ function enviarCorreoConfirmacion(id_solicitud) {
       throw new Error(`No se encontró correo del usuario con ID: ${solicitud.id_usuario}`);
     }
 
-    // Obtener las imágenes adjuntas (mismos IDs que ya usas)
-    const cabecera = DriveApp.getFileById('1kVOqEsE2e2t7r_ZxGWBHNEg6pdI9bMPT').getBlob();
-    const pie = DriveApp.getFileById('1JxcYdB7ZFHZi1CGk5SgVtoB6ir74rnbF').getBlob();
+    // Obtener las imágenes adjuntas desde Drive
+    let cabecera = null;
+    let pie = null;
+    try {
+      cabecera = DriveApp.getFileById(CONFIG_DRIVE.imagenCabecera).getBlob();
+      pie = DriveApp.getFileById(CONFIG_DRIVE.imagenPie).getBlob();
+    } catch (driveError) {
+      console.warn('No se pudieron cargar las imágenes de Drive para el correo:', driveError.toString());
+      // Continuar sin imágenes - el correo se enviará de todas formas
+    }
 
     // 1) Correo al usuario
     const htmlUsuario = generarCorreoTicketUsuario(solicitud);
+    const opcionesUsuario = {
+      name: "CENTRO DE SOLUCIONES CONECTADAS",
+      htmlBody: htmlUsuario
+    };
+
+    // Solo agregar imágenes si se pudieron cargar
+    if (cabecera && pie) {
+      opcionesUsuario.inlineImages = {
+        imgArriba: cabecera,
+        imgAbajo: pie
+      };
+    }
+
     GmailApp.sendEmail(
       correoUsuario,
       `Ticket Generado - CSC IPESA #${id_solicitud}`,
-      '', 
-      {
-        name : "CENTRO DE SOLUCIONES CONECTADAS",
-        htmlBody: htmlUsuario,
-        inlineImages: {
-          imgArriba: cabecera,
-          imgAbajo: pie
-        }
-      }
+      '',
+      opcionesUsuario
     );
 
     // 2) Correo al responsable (si tiene correo)
     if (correoResponsable) {
       const htmlResponsable = generarCorreoTicketResponsable(solicitud, responsableMenu);
+      const opcionesResponsable = {
+        name: "CENTRO DE SOLUCIONES CONECTADAS",
+        htmlBody: htmlResponsable
+      };
+
+      // Solo agregar imágenes si se pudieron cargar
+      if (cabecera && pie) {
+        opcionesResponsable.inlineImages = {
+          imgArriba: cabecera,
+          imgAbajo: pie
+        };
+      }
+
       GmailApp.sendEmail(
         correoResponsable,
         `Nueva solicitud asignada - CSC IPESA #${id_solicitud}`,
-        '', 
-        {
-          name : "CENTRO DE SOLUCIONES CONECTADAS",
-          htmlBody: htmlResponsable,
-          inlineImages: {
-            imgArriba: cabecera,
-            imgAbajo: pie
-          }
-        }
+        '',
+        opcionesResponsable
       );
     }
 
@@ -272,22 +291,35 @@ function enviarCorreoCambioEstado(id_solicitud, nuevoEstado, comentario) {
       </div>
     `;
 
-    // Imágenes (usa los mismos IDs de Drive que en confirmación)
-    const cabecera = DriveApp.getFileById('1kVOqEsE2e2t7r_ZxGWBHNEg6pdI9bMPT').getBlob();
-    const pie = DriveApp.getFileById('1JxcYdB7ZFHZi1CGk5SgVtoB6ir74rnbF').getBlob();
+    // Obtener imágenes desde Drive
+    let cabecera = null;
+    let pie = null;
+    try {
+      cabecera = DriveApp.getFileById(CONFIG_DRIVE.imagenCabecera).getBlob();
+      pie = DriveApp.getFileById(CONFIG_DRIVE.imagenPie).getBlob();
+    } catch (driveError) {
+      console.warn('No se pudieron cargar las imágenes de Drive para el correo:', driveError.toString());
+      // Continuar sin imágenes
+    }
+
+    const opcionesCorreo = {
+      name: "CENTRO DE SOLUCIONES CONECTADAS",
+      htmlBody: cuerpo
+    };
+
+    // Solo agregar imágenes si se pudieron cargar
+    if (cabecera && pie) {
+      opcionesCorreo.inlineImages = {
+        imgArriba: cabecera,
+        imgAbajo: pie
+      };
+    }
 
     GmailApp.sendEmail(
       correoUsuario,
       `Actualización de estado - Ticket #${id_solicitud}`,
       "Tu solicitud cambió de estado.",
-      {
-        name: "CENTRO DE SOLUCIONES CONECTADAS",
-        htmlBody: cuerpo,
-        inlineImages: {
-          imgArriba: cabecera,
-          imgAbajo: pie
-        }
-      }
+      opcionesCorreo
     );
 
     console.log(`Correo de cambio de estado enviado a ${correoUsuario} (${nuevoEstado})`);

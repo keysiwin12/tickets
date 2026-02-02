@@ -9,14 +9,19 @@ function crearSolicitud(solicitud) {
   // Subir archivo a Drive si viene adjunto
   let urlArchivo = "";
   if (solicitud.archivo_base64) {
-    const carpeta = DriveApp.getFolderById("1J9jFrcG_KGcG9dvcmxiFhhbUnEvOsdUn");
-    const blob = Utilities.newBlob(
-      Utilities.base64Decode(solicitud.archivo_base64),
-      "",
-      solicitud.archivo_nombre
-    );
-    const archivo = carpeta.createFile(blob);
-    urlArchivo = archivo.getUrl();
+    try {
+      const carpeta = DriveApp.getFolderById(CONFIG_DRIVE.carpetaArchivos);
+      const blob = Utilities.newBlob(
+        Utilities.base64Decode(solicitud.archivo_base64),
+        "",
+        solicitud.archivo_nombre
+      );
+      const archivo = carpeta.createFile(blob);
+      urlArchivo = archivo.getUrl();
+    } catch (driveError) {
+      console.error('Error al subir archivo a Drive:', driveError.toString());
+      // Continuar sin archivo adjunto - la solicitud se creará de todas formas
+    }
   }
 
   // Mapea cada campo de solicitud a su columna en la hoja
@@ -70,10 +75,15 @@ function cambiarEstadoSolicitud(id_solicitud, nuevoEstado, comentario, archivo_b
   // 📂 Subir archivo opcional
   let urlArchivo = "";
   if (archivo_base64 && archivo_nombre) {
-    const carpeta = DriveApp.getFolderById("1J9jFrcG_KGcG9dvcmxiFhhbUnEvOsdUn");
-    const blob = Utilities.newBlob(Utilities.base64Decode(archivo_base64), "", archivo_nombre);
-    const archivo = carpeta.createFile(blob);
-    urlArchivo = archivo.getUrl();
+    try {
+      const carpeta = DriveApp.getFolderById(CONFIG_DRIVE.carpetaArchivos);
+      const blob = Utilities.newBlob(Utilities.base64Decode(archivo_base64), "", archivo_nombre);
+      const archivo = carpeta.createFile(blob);
+      urlArchivo = archivo.getUrl();
+    } catch (driveError) {
+      console.error('Error al subir archivo a Drive en cambio de estado:', driveError.toString());
+      // Continuar sin archivo adjunto
+    }
   }
 
   // 1) Insertar SIEMPRE en historial
@@ -158,10 +168,15 @@ function agregarComentarioUsuario(id_solicitud, comentario, archivo_base64, arch
   // 📂 Subir archivo opcional
   let urlArchivo = "";
   if (archivo_base64 && archivo_nombre) {
-    const carpeta = DriveApp.getFolderById("1J9jFrcG_KGcG9dvcmxiFhhbUnEvOsdUn"); // tu carpeta de archivos
-    const blob = Utilities.newBlob(Utilities.base64Decode(archivo_base64), "", archivo_nombre);
-    const archivo = carpeta.createFile(blob);
-    urlArchivo = archivo.getUrl();
+    try {
+      const carpeta = DriveApp.getFolderById(CONFIG_DRIVE.carpetaArchivos);
+      const blob = Utilities.newBlob(Utilities.base64Decode(archivo_base64), "", archivo_nombre);
+      const archivo = carpeta.createFile(blob);
+      urlArchivo = archivo.getUrl();
+    } catch (driveError) {
+      console.error('Error al subir archivo a Drive en comentario:', driveError.toString());
+      // Continuar sin archivo adjunto
+    }
   }
 
   // 1) Insertar SIEMPRE en historial (estado = "En Proceso")
