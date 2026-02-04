@@ -3,7 +3,7 @@
 // =======================================================
 const CONFIG_DRIVE = {
   // Carpeta donde se guardan los archivos adjuntos de las solicitudes
-  carpetaArchivos: "1J9jFrcG_KGcG9dvcmxiFhhbUnEvOsdUn",
+  carpetaArchivos: "1KhJh_uoOz_wFqgUeErNh4a0YcPvCwykS",
 
   // Imágenes para correos electrónicos
   imagenCabecera: "1kVOqEsE2e2t7r_ZxGWBHNEg6pdI9bMPT",
