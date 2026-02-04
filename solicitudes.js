@@ -31,13 +31,13 @@ function crearSolicitud(solicitud) {
     descripcion: 5,    // Columna E
     estado: 7,
     fecha_solicitud: 8,
-    responsable: 4,
+    id_responsable: 4,  // Cambiado de "responsable" a "id_responsable"
     id_usuario : 3,
     archivo : 6
   };
 
   // Obtener responsable desde configuracion.js según categoría y servicio
-  solicitud.responsable = obtenerResponsablePorServicio(solicitud.categoria, solicitud.id_asunto) || null; 
+  solicitud.id_responsable = obtenerResponsablePorServicio(solicitud.categoria, solicitud.id_asunto) || null; 
   solicitud.id_usuario = userEmail;
   solicitud.archivo = urlArchivo;
   solicitud.fecha_solicitud = new Date();
