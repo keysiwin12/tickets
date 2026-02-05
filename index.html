@@ -31,20 +31,9 @@
         }
       }
 
-    /* Arreglar dropdowns en tablas para que no se corten */
+    /* Arreglar dropdowns en tablas para que se vean sobre otros elementos */
     table .dropdown-menu {
-      position: absolute !important;
       z-index: 1050 !important;
-      transform: translate3d(0, 0, 0) !important;
-    }
-
-    /* Asegurar que el contenedor de tabla no corte el dropdown */
-    table tbody tr {
-      position: relative;
-    }
-
-    table .dropdown {
-      position: static;
     }
 
     /* Mejoras para la vista de solicitudes */
