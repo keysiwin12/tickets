@@ -89,10 +89,7 @@ function cambiarEstadoSolicitud(id_solicitud, nuevoEstado, comentario, archivo_b
     throw new Error("Estado no permitido: " + nuevoEstado);
   }
 
-  // ✅ Comentario obligatorio
-  if (!comentario || comentario.trim() === "") {
-    throw new Error("El comentario es obligatorio");
-  }
+  // Comentario opcional - no se valida
 
   // 📂 Subir archivo opcional
   let urlArchivo = "";
@@ -163,10 +160,7 @@ function agregarComentarioUsuario(id_solicitud, comentario, archivo_base64, arch
   const shHist = ss.getSheetByName("historial_estados");
   if (!shSol || !shHist) throw new Error("Faltan hojas requeridas");
 
-  // ✅ Validar comentario obligatorio
-  if (!comentario || comentario.trim() === "") {
-    throw new Error("El comentario es obligatorio");
-  }
+  // Comentario opcional - no se valida
 
   // Buscar solicitud y validar que esté en proceso
   const vals = shSol.getDataRange().getValues();
