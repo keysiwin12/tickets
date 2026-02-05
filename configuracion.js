@@ -146,6 +146,11 @@ const CONFIG_SERVICIOS = {
         { nombre: "Compartimiento", tipo: "text", obligatorio: true },
         { nombre: "Aceite original", tipo: "text", obligatorio: true }
       ]
+    },
+    "Consulta técnica": {
+      campos: [
+        { nombre: "Detalle de la consulta", tipo: "textarea", obligatorio: true }
+      ]
     }
   },
 
