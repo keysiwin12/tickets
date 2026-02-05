@@ -30,7 +30,23 @@
           font-size: 12px;
         }
       }
-    
+
+    /* Arreglar dropdowns en tablas para que no se corten */
+    table .dropdown-menu {
+      position: absolute !important;
+      z-index: 1050 !important;
+      transform: translate3d(0, 0, 0) !important;
+    }
+
+    /* Asegurar que el contenedor de tabla no corte el dropdown */
+    table tbody tr {
+      position: relative;
+    }
+
+    table .dropdown {
+      position: static;
+    }
+
     /* Mejoras para la vista de solicitudes */
     #misSolicitudesView {
         padding-top: 20px;
@@ -1248,6 +1264,55 @@
           }
         }
 
+        // Actualizar estado simple (sin comentario ni archivo)
+        function actualizarEstadoSimple(id) {
+          const btn = event.target;
+          btn.disabled = true;
+
+          const dropdownBtn = document.getElementById(`dropdown-${id}`);
+          const nuevoEstado = dropdownBtn.getAttribute("data-estado");
+          const prevEstado = dropdownBtn.getAttribute("data-prev") || nuevoEstado;
+
+          // Sin comentario ni archivo
+          const comentario = "";
+
+          // 1) Optimista inmediato en UI
+          pendingUpdates[id] = { estado: nuevoEstado, comentario, prevEstado, ts: Date.now() };
+          parchearFilaAsignadasDOM(id, nuevoEstado);
+          parchearFilaMisDOM(id, nuevoEstado);
+
+          // 2) Optimista en cache
+          if (solicitudesCache) {
+            const item = solicitudesCache.find(s => String(s.id_solicitud) === String(id));
+            if (item) item.estado_actual = nuevoEstado;
+          }
+
+          // 3) Marcar datos como sucios
+          solicitudesDirty = true;
+          solicitudesAsignadasDirty = true;
+
+          // 4) Llamada al servidor
+          google.script.run
+            .withSuccessHandler(() => {
+              mostrarNotificacion("Estado actualizado ✅", "success");
+              dropdownBtn.setAttribute("data-prev", nuevoEstado);
+              delete pendingUpdates[id];
+              btn.disabled = false;
+              marcarSolicitudDirty(id);
+            })
+            .withFailureHandler(err => {
+              mostrarNotificacion("Error: " + err.message, "error");
+              // Rollback UI
+              cambiarEstadoUI(id, prevEstado);
+              if (solicitudesCache) {
+                const item = solicitudesCache.find(s => String(s.id_solicitud) === String(id));
+                if (item) item.estado_actual = prevEstado;
+              }
+              delete pendingUpdates[id];
+              btn.disabled = false;
+            })
+            .cambiarEstadoSolicitud(id, nuevoEstado, comentario, null, null);
+        }
 
 
         // mostrar solicitudes asignadas
@@ -1298,9 +1363,14 @@
                 </td>
                 <td style="padding:10px;color:#666;">${fec}</td>
                 <td style="padding:10px;">
-                  <button onclick="verDetallesSolicitud('${id}')" class="btn btn-outline-primary btn-sm">
-                    👁️ Ver Detalles
-                  </button>
+                  <div class="d-flex gap-2 align-items-center">
+                    <button onclick="actualizarEstadoSimple('${id}')" class="btn btn-primary btn-sm">
+                      💾 Guardar
+                    </button>
+                    <button onclick="verDetallesSolicitud('${id}')" class="btn btn-outline-primary btn-sm">
+                      👁️ Ver Detalles
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
