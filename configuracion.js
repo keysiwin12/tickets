@@ -185,8 +185,18 @@ function obtenerConfigServicio(categoriaId, asuntoId) {
   return CONFIG_SERVICIOS[categoriaNombre]?.[asuntoNombre] || null;
 }
 
-// Función para obtener responsable según categoría
+// Función para obtener responsable según categoría o asunto (con lógica en cascada)
 function obtenerResponsablePorServicio(categoriaId, asuntoId) {
+  // 1. Primero verificar si el asunto tiene un responsable específico (excepción)
+  const asuntos = getAsuntos();
+  const asunto = asuntos.find(a => a.id == asuntoId);
+
+  if (asunto && asunto.id_responsable) {
+    // Hay una excepción: usar responsable específico del asunto
+    return asunto.id_responsable;
+  }
+
+  // 2. Fallback: usar responsable de la categoría (comportamiento normal)
   const categorias = getCategorias();
   const categoria = categorias.find(c => c.id == categoriaId);
   return categoria ? categoria.id_responsable : null;

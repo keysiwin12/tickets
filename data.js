@@ -50,7 +50,8 @@ function getAsuntos(categoriaId = null) {
       id: row["id_asunto"],
       categoria_id: row["id_categoria"],
       nombre: row["nombre"],
-      descripcion: row["descripcion"]
+      descripcion: row["descripcion"],
+      id_responsable: row["id_responsable"] || null  // Opcional: para excepciones
     }));
 
     // Filtro por categoría si aplica
