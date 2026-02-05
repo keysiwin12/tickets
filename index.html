@@ -1393,7 +1393,7 @@
         // Función para mostrar notificaciones modernas
         function mostrarNotificacion(mensaje, tipo = 'success') {
             const notif = document.createElement('div');
-            
+
             let backgroundColor, textColor, borderColor;
             if (tipo === 'success') {
                 backgroundColor = '#d4edda';
@@ -1407,10 +1407,14 @@
                 backgroundColor = '#d1ecf1';
                 textColor = '#0c5460';
                 borderColor = '#bee5eb';
-            } else {
+            } else if (tipo === 'warning') {
                 backgroundColor = '#fff3cd';
                 textColor = '#856404';
                 borderColor = '#ffeaa7';
+            } else {
+                backgroundColor = '#e2e3e5';
+                textColor = '#383d41';
+                borderColor = '#d6d8db';
             }
             
             notif.style.cssText = `
@@ -1539,8 +1543,59 @@
                     };
 
                     google.script.run
-                        .withSuccessHandler(() => {
-                            mostrarNotificacion("Solicitud enviada con archivo 👍", 'success');
+                        .withSuccessHandler((resultado) => {
+                            // Verificar si hubo problemas con permisos o archivo
+                            if (resultado && resultado.error_archivo) {
+                                // Mostrar alerta específica de permisos
+                                mostrarNotificacion("⚠️ SOLICITUD CREADA pero hubo un problema", 'warning');
+
+                                // Mostrar alerta detallada al usuario
+                                const mensajeDetallado = `
+                                    <div style="text-align: left; padding: 10px;">
+                                        <h3 style="color: #ff9800; margin-top: 0;">⚠️ Problema de Permisos</h3>
+                                        <p><strong>Tu solicitud #${resultado.id_solicitud} se creó exitosamente</strong>, pero el archivo adjunto NO pudo guardarse.</p>
+                                        <hr>
+                                        <p><strong>Error:</strong></p>
+                                        <p style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; word-wrap: break-word;">
+                                            ${resultado.error_archivo}
+                                        </p>
+                                        <hr>
+                                        <p><strong>¿Qué hacer?</strong></p>
+                                        <ol style="margin: 10px 0;">
+                                            <li>Copia este mensaje completo</li>
+                                            <li>Envíalo al administrador del sistema</li>
+                                            <li>El administrador te ayudará a configurar los permisos</li>
+                                        </ol>
+                                        <p style="background: #fff3cd; padding: 8px; border-radius: 4px; font-size: 13px;">
+                                            💡 <strong>Nota:</strong> Este es probablemente un problema de autorización de Google Drive. El administrador puede ayudarte a resolverlo.
+                                        </p>
+                                    </div>
+                                `;
+
+                                // Mostrar alerta modal
+                                if (confirm(mensajeDetallado.replace(/<[^>]*>/g, '\n'))) {
+                                    // Copiar al portapapeles
+                                    const textoParaCopiar = `REPORTE DE ERROR - Sistema de Tickets CSC
+
+Usuario: ${Session.getActiveUser ? Session.getActiveUser().getEmail() : 'usuario'}
+Solicitud: ${resultado.id_solicitud}
+Problema: No se pudo subir archivo adjunto
+Error: ${resultado.error_archivo}
+Fecha: ${new Date().toLocaleString()}
+
+Por favor, ayúdame a resolver este problema de permisos.`;
+
+                                    // Intentar copiar
+                                    navigator.clipboard.writeText(textoParaCopiar).then(() => {
+                                        alert('✅ Error copiado al portapapeles. Envíalo al administrador.');
+                                    }).catch(() => {
+                                        alert('⚠️ No se pudo copiar automáticamente. Por favor, copia manualmente el mensaje de error.');
+                                    });
+                                }
+                            } else {
+                                mostrarNotificacion("Solicitud enviada con archivo 👍", 'success');
+                            }
+
                             solicitudesCache = null;
                             google.script.run
                             .withSuccessHandler(function(solicitudes){ solicitudesCache = solicitudes; })
@@ -1548,7 +1603,44 @@
                             .getSolicitudesPorUsuario();
                         })
                         .withFailureHandler(err => {
-                            mostrarNotificacion("Error: " + err.message, 'error');
+                            // Error crítico - la solicitud no se creó
+                            const mensajeError = err.message || err.toString();
+
+                            // Detectar si es error de permisos
+                            if (mensajeError.includes('permission') || mensajeError.includes('auth') || mensajeError.includes('Authorization')) {
+                                mostrarNotificacion("❌ ERROR DE PERMISOS - Solicitud NO creada", 'error');
+
+                                const mensajePermisos = `
+🔒 ERROR DE PERMISOS DETECTADO
+
+Tu solicitud NO pudo ser creada debido a un problema de autorización.
+
+ERROR COMPLETO:
+${mensajeError}
+
+SOLUCIÓN:
+1. Copia este mensaje
+2. Envíalo al administrador del sistema
+3. Posiblemente necesitas re-autorizar la aplicación
+
+Para re-autorizar:
+1. Ve a: https://myaccount.google.com/permissions
+2. Busca "Sistema de Tickets CSC"
+3. Elimina el acceso
+4. Vuelve a abrir esta aplicación
+5. Autoriza TODOS los permisos cuando te lo pida
+`;
+
+                                alert(mensajePermisos);
+
+                                // Intentar copiar
+                                navigator.clipboard.writeText(mensajePermisos).catch(() => {
+                                    console.error('No se pudo copiar al portapapeles');
+                                });
+                            } else {
+                                mostrarNotificacion("Error: " + mensajeError, 'error');
+                            }
+
                             solicitudesCache = null;
                         })
                         .crearSolicitud(solicitud);
@@ -1566,8 +1658,14 @@
                 };
 
                 google.script.run
-                    .withSuccessHandler(() => {
-                        mostrarNotificacion("Solicitud enviada 👍", 'success');
+                    .withSuccessHandler((resultado) => {
+                        // Verificar si hubo advertencias (aunque sin archivo, puede haber otros problemas)
+                        if (resultado && resultado.advertencia) {
+                            mostrarNotificacion("⚠️ " + resultado.advertencia, 'warning');
+                        } else {
+                            mostrarNotificacion("Solicitud enviada 👍", 'success');
+                        }
+
                         solicitudesCache = null;
                         google.script.run
                           .withSuccessHandler(function(solicitudes){ solicitudesCache = solicitudes; })
@@ -1575,7 +1673,44 @@
                           .getSolicitudesPorUsuario();
                     })
                     .withFailureHandler(err => {
-                        mostrarNotificacion("Error: " + err.message, 'error');
+                        // Error crítico - la solicitud no se creó
+                        const mensajeError = err.message || err.toString();
+
+                        // Detectar si es error de permisos
+                        if (mensajeError.includes('permission') || mensajeError.includes('auth') || mensajeError.includes('Authorization')) {
+                            mostrarNotificacion("❌ ERROR DE PERMISOS - Solicitud NO creada", 'error');
+
+                            const mensajePermisos = `
+🔒 ERROR DE PERMISOS DETECTADO
+
+Tu solicitud NO pudo ser creada debido a un problema de autorización.
+
+ERROR COMPLETO:
+${mensajeError}
+
+SOLUCIÓN:
+1. Copia este mensaje
+2. Envíalo al administrador del sistema
+3. Posiblemente necesitas re-autorizar la aplicación
+
+Para re-autorizar:
+1. Ve a: https://myaccount.google.com/permissions
+2. Busca "Sistema de Tickets CSC"
+3. Elimina el acceso
+4. Vuelve a abrir esta aplicación
+5. Autoriza TODOS los permisos cuando te lo pida
+`;
+
+                            alert(mensajePermisos);
+
+                            // Intentar copiar
+                            navigator.clipboard.writeText(mensajePermisos).catch(() => {
+                                console.error('No se pudo copiar al portapapeles');
+                            });
+                        } else {
+                            mostrarNotificacion("Error: " + mensajeError, 'error');
+                        }
+
                         solicitudesCache = null;
                     })
                     .crearSolicitud(solicitud);
