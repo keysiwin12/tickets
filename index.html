@@ -448,13 +448,258 @@
             border-color: #f87171;
             color: #dc2626;
         }
+
+        /* 🔔 NOTIFICACIONES */
+        /* Contenedor de notificaciones en header */
+        .notifications-container {
+            position: relative;
+            display: inline-block;
+            margin-left: auto;
+            margin-right: 20px;
+        }
+
+        .notifications-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            padding: 8px;
+            transition: transform 0.2s;
+        }
+
+        .notifications-bell:hover {
+            transform: scale(1.1);
+        }
+
+        .notifications-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #dc2626;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+            display: none;
+        }
+
+        .notifications-badge.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Dropdown de notificaciones */
+        .notifications-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 350px;
+            max-height: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .notifications-dropdown.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notifications-header {
+            background: #1976d2;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notifications-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .notification-item:hover {
+            background: #f5f5f5;
+        }
+
+        .notification-item.unread {
+            background: #e3f2fd;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .notification-message {
+            color: #333;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .notifications-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid #1976d2;
+        }
+
+        .toast.fade-out {
+            animation: fadeOut 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-message {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .toast-time {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 0 5px;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
     </style>
 </head>
 <body>
   <div class="top-header">
     <button class="hamburger-btn" onclick="toggleSideMenu()">☰</button>
     <div class="header-title">CSCDesk</div>
+
+    <!-- 🔔 Notificaciones -->
+    <div class="notifications-container">
+      <div class="notifications-bell" onclick="toggleNotificationsDropdown()">
+        🔔
+        <span id="notificationsBadge" class="notifications-badge">0</span>
+      </div>
+
+      <!-- Dropdown de notificaciones -->
+      <div id="notificationsDropdown" class="notifications-dropdown">
+        <div class="notifications-header">
+          <h4>Notificaciones</h4>
+        </div>
+        <div id="notificationsList" class="notifications-list">
+          <div class="notification-item">
+            <p style="text-align: center; color: #999; padding: 20px;">
+              No hay notificaciones nuevas
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- 🍞 Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <!-- Menú lateral -->
   <div class="side-menu" id="sideMenu">
@@ -871,6 +1116,9 @@
 
               document.getElementById('loading').style.display = 'none';
               document.getElementById('app').style.display = 'flex';
+
+              // 🔔 Iniciar sistema de notificaciones en tiempo real
+              iniciarNotificaciones();
             })
             .withFailureHandler(function(error) {
               console.error('Error al cargar datos iniciales:', error);
@@ -1758,6 +2006,269 @@
                 setTimeout(() => notif.remove(), 300);
             }, tipo === 'success' ? 1500 : 3000);
         }
+
+        // ================================================================================
+        // 🔔 SISTEMA DE NOTIFICACIONES EN TIEMPO REAL
+        // ================================================================================
+
+        let ultimoTimestamp = Date.now(); // Última vez que verificamos cambios
+        let notificacionesNoLeidas = [];
+        let pollingInterval = null;
+        let notificacionSound = null; // Audio para notificación
+
+        // Iniciar el sistema de notificaciones
+        function iniciarNotificaciones() {
+            // Verificar cambios cada 40 segundos
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(verificarActualizaciones, 40000); // 40 segundos
+
+            // Primera verificación inmediata (sin notificación)
+            verificarActualizaciones(true);
+        }
+
+        // Verificar si hay actualizaciones desde el último timestamp
+        function verificarActualizaciones(silencioso = false) {
+            google.script.run
+                .withSuccessHandler(function(cambios) {
+                    procesarCambios(cambios, silencioso);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error al verificar actualizaciones:', error);
+                })
+                .obtenerCambiosDesde(ultimoTimestamp);
+        }
+
+        // Procesar cambios recibidos del servidor
+        function procesarCambios(cambios, silencioso = false) {
+            if (!cambios || cambios.length === 0) return;
+
+            // Actualizar timestamp al más reciente
+            const maxTimestamp = Math.max(...cambios.map(c => c.timestamp));
+            ultimoTimestamp = maxTimestamp;
+
+            // Agregar nuevas notificaciones (solo si no es silencioso)
+            if (!silencioso) {
+                cambios.forEach(cambio => {
+                    notificacionesNoLeidas.push(cambio);
+                    mostrarToast(cambio); // Mostrar toast
+                });
+
+                // Reproducir sonido si hay notificaciones nuevas
+                if (cambios.length > 0) {
+                    reproducirSonido();
+                }
+            } else {
+                // En modo silencioso, solo agregar a la lista sin mostrar toast
+                cambios.forEach(cambio => {
+                    notificacionesNoLeidas.push(cambio);
+                });
+            }
+
+            // Mantener solo las últimas 5
+            if (notificacionesNoLeidas.length > 5) {
+                notificacionesNoLeidas = notificacionesNoLeidas.slice(-5);
+            }
+
+            // Actualizar badge y dropdown
+            actualizarBadgeNotificaciones();
+            actualizarDropdownNotificaciones();
+
+            // Marcar datos como sucios para forzar recarga
+            solicitudesDirty = true;
+            solicitudesAsignadasDirty = true;
+        }
+
+        // Mostrar toast notification (mensaje emergente)
+        function mostrarToast(cambio) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            // Determinar ícono según tipo
+            const icono = cambio.tipo === 'mis' ? '📋' : '🔔';
+
+            // Calcular tiempo transcurrido
+            const ahora = Date.now();
+            const diff = ahora - cambio.timestamp;
+            const segundos = Math.floor(diff / 1000);
+            const tiempoTexto = segundos < 60 ? 'Justo ahora' : `Hace ${Math.floor(segundos / 60)} min`;
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icono}</div>
+                <div class="toast-content">
+                    <div class="toast-message">${cambio.mensaje}</div>
+                    <div class="toast-time">${tiempoTexto}</div>
+                </div>
+                <span class="toast-close" onclick="this.parentElement.remove()">×</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Actualizar badge de notificaciones (número rojo)
+        function actualizarBadgeNotificaciones() {
+            const badge = document.getElementById('notificationsBadge');
+            if (!badge) return;
+
+            const count = notificacionesNoLeidas.length;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.add('active');
+            } else {
+                badge.classList.remove('active');
+            }
+        }
+
+        // Actualizar dropdown de notificaciones
+        function actualizarDropdownNotificaciones() {
+            const lista = document.getElementById('notificationsList');
+            if (!lista) return;
+
+            if (notificacionesNoLeidas.length === 0) {
+                lista.innerHTML = `
+                    <div class="notification-item">
+                        <p style="text-align: center; color: #999; padding: 20px;">
+                            No hay notificaciones nuevas
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Mostrar últimas 5 notificaciones (más reciente primero)
+            const notificacionesHTML = notificacionesNoLeidas
+                .slice()
+                .reverse()
+                .map(cambio => {
+                    const fecha = new Date(cambio.timestamp);
+                    const tiempo = formatearTiempoRelativo(fecha);
+                    const icono = cambio.tipo === 'mis' ? '📋' : '🔔';
+
+                    return `
+                        <div class="notification-item unread" onclick="abrirNotificacion('${cambio.id_solicitud}')">
+                            <span class="notification-icon">${icono}</span>
+                            <div class="notification-content">
+                                <p class="notification-text">${cambio.mensaje}</p>
+                                <span class="notification-time">${tiempo}</span>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join('');
+
+            lista.innerHTML = notificacionesHTML;
+        }
+
+        // Formatear tiempo relativo (hace X minutos)
+        function formatearTiempoRelativo(fecha) {
+            const ahora = new Date();
+            const diff = ahora - fecha;
+            const segundos = Math.floor(diff / 1000);
+            const minutos = Math.floor(segundos / 60);
+            const horas = Math.floor(minutos / 60);
+            const dias = Math.floor(horas / 24);
+
+            if (segundos < 60) return 'Justo ahora';
+            if (minutos < 60) return `Hace ${minutos} min`;
+            if (horas < 24) return `Hace ${horas} h`;
+            return `Hace ${dias} d`;
+        }
+
+        // Toggle dropdown de notificaciones
+        function toggleNotificationsDropdown() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            if (!dropdown) return;
+
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+
+            // Si se abre el dropdown, marcar todas como leídas después de 1 segundo
+            if (!isVisible) {
+                setTimeout(() => {
+                    const items = dropdown.querySelectorAll('.notification-item.unread');
+                    items.forEach(item => item.classList.remove('unread'));
+                }, 1000);
+            }
+        }
+
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const container = document.querySelector('.notifications-container');
+            const dropdown = document.getElementById('notificationsDropdown');
+
+            if (container && dropdown && !container.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Abrir solicitud desde notificación
+        function abrirNotificacion(idSolicitud) {
+            // Cerrar dropdown
+            const dropdown = document.getElementById('notificationsDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+
+            // Abrir modal de solicitud
+            abrirModalSolicitud(idSolicitud);
+        }
+
+        // Reproducir sonido de notificación (estilo WhatsApp)
+        function reproducirSonido() {
+            // Crear audio context si no existe
+            if (!notificacionSound) {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    // Configurar sonido (tono simple)
+                    oscillator.frequency.value = 800; // Frecuencia en Hz
+                    oscillator.type = 'sine';
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+
+                    // Segunda nota para sonido doble (estilo WhatsApp)
+                    setTimeout(() => {
+                        const osc2 = audioContext.createOscillator();
+                        const gain2 = audioContext.createGain();
+
+                        osc2.connect(gain2);
+                        gain2.connect(audioContext.destination);
+
+                        osc2.frequency.value = 1000;
+                        osc2.type = 'sine';
+
+                        gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                        osc2.start(audioContext.currentTime);
+                        osc2.stop(audioContext.currentTime + 0.3);
+                    }, 150);
+                } catch (error) {
+                    console.error('Error al reproducir sonido:', error);
+                }
+            }
+        }
+
+        // ================================================================================
+        // FIN SISTEMA DE NOTIFICACIONES
+        // ================================================================================
 
         // Función helper para formatear descripción JSON
         function formatearDescripcion(descripcion, truncar = false) {

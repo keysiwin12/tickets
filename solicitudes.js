@@ -456,3 +456,117 @@ function getSolicitudIndexes() {
   };
 }
 
+// =======================================================
+// 🔔 NOTIFICACIONES EN TIEMPO REAL
+// =======================================================
+
+/**
+ * Obtener cambios recientes para notificaciones en tiempo real
+ * @param {number} timestamp - Milisegundos desde epoch (Date.now())
+ * @returns {Array} - Últimas 5 notificaciones para el usuario
+ */
+function obtenerCambiosDesde(timestamp) {
+  try {
+    const userEmail = Session.getActiveUser().getEmail().toLowerCase().trim();
+    const cambios = [];
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const shHist = ss.getSheetByName('historial_estados');
+    const shSol = ss.getSheetByName('solicitudes');
+
+    if (!shHist || !shSol) return [];
+
+    // Leer historial
+    const histData = shHist.getDataRange().getValues();
+    if (histData.length <= 1) return []; // Solo headers
+
+    const headers = histData[0];
+    const idxFecha = headers.indexOf('fecha_hora');
+    const idxSolicitud = headers.indexOf('id_solicitud');
+    const idxEstado = headers.indexOf('estado');
+    const idxComentario = headers.indexOf('comentario');
+    const idxResponsable = headers.indexOf('responsable');
+
+    // Obtener datos de solicitudes para verificar pertenencia
+    const solData = shSol.getDataRange().getValues();
+    const solHeaders = solData[0];
+    const idxSolId = solHeaders.indexOf('id_solicitud');
+    const idxSolUsuario = solHeaders.indexOf('id_usuario');
+    const idxSolResp = solHeaders.indexOf('id_responsable');
+    const idxAsunto = solHeaders.indexOf('id_asunto');
+
+    // Crear mapa de solicitudes para lookup rápido
+    const solicitudesMap = {};
+    for (let i = 1; i < solData.length; i++) {
+      solicitudesMap[solData[i][idxSolId]] = {
+        id_usuario: solData[i][idxSolUsuario],
+        id_responsable: solData[i][idxSolResp],
+        id_asunto: solData[i][idxAsunto]
+      };
+    }
+
+    // Verificar si el usuario es responsable
+    const responsableInfo = esResponsable();
+
+    // Convertir timestamp a Date
+    const fechaLimite = new Date(Number(timestamp));
+
+    // Recorrer historial de más reciente a más antiguo
+    for (let i = histData.length - 1; i >= 1 && cambios.length < 5; i--) {
+      const fechaRegistro = histData[i][idxFecha];
+
+      // Convertir a Date si no lo es
+      const fecha = fechaRegistro instanceof Date ? fechaRegistro : new Date(fechaRegistro);
+
+      // Solo cambios después del timestamp
+      if (fecha > fechaLimite) {
+        const idSolicitud = histData[i][idxSolicitud];
+        const solicitud = solicitudesMap[idSolicitud];
+
+        if (solicitud) {
+          const esDelUsuario = String(solicitud.id_usuario).toLowerCase().trim() === userEmail;
+          const esResponsableDeEsta = responsableInfo.es && String(solicitud.id_responsable).trim() === String(responsableInfo.id).trim();
+
+          // Solo incluir si pertenece al usuario o está asignada a él
+          if (esDelUsuario || esResponsableDeEsta) {
+            const estado = histData[i][idxEstado];
+            const comentario = histData[i][idxComentario] || '';
+            const responsable = histData[i][idxResponsable] || '';
+
+            // Obtener nombre del asunto
+            const mapaAsuntos = getMapaAsuntos();
+            const nombreAsunto = mapaAsuntos[solicitud.id_asunto] || solicitud.id_asunto;
+
+            // Construir mensaje
+            let mensaje = `${idSolicitud}`;
+            if (estado) mensaje += ` → ${estado}`;
+            if (comentario && !comentario.toLowerCase().includes('solicitud creada')) {
+              mensaje += `: "${comentario.substring(0, 50)}${comentario.length > 50 ? '...' : ''}"`;
+            }
+
+            cambios.push({
+              id_solicitud: idSolicitud,
+              estado: estado,
+              fecha: fecha.toISOString(),
+              mensaje: mensaje,
+              comentario: comentario,
+              responsable: responsable,
+              asunto: nombreAsunto,
+              tipo: esDelUsuario ? 'mis' : 'asignadas',
+              timestamp: fecha.getTime()
+            });
+          }
+        }
+      }
+    }
+
+    // Ordenar por fecha descendente (más reciente primero)
+    cambios.sort((a, b) => b.timestamp - a.timestamp);
+
+    return cambios.slice(0, 5); // Solo las últimas 5
+
+  } catch (error) {
+    Logger.log('Error en obtenerCambiosDesde: ' + error.toString());
+    return [];
+  }
+}
