@@ -64,7 +64,7 @@ function crearSolicitud(solicitud) {
     }
   }
   ordenarTablaPorFecha("solicitudes",8);
-  cambiarEstadoSolicitud(id_solicitud, "Pendiente", "solicitud creada","","")
+  cambiarEstadoSolicitud(id_solicitud, "Pendiente", "Solicitud creada","","")
   enviarCorreoConfirmacion(id_solicitud);
 
   // Retornar resultado con advertencia si hubo error con archivo
