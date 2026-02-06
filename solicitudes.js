@@ -11,28 +11,18 @@ function crearSolicitud(solicitud) {
   let errorArchivo = null;
   if (solicitud.archivo_base64) {
     try {
-      console.log(`[DEBUG] Intentando subir archivo: ${solicitud.archivo_nombre}`);
-      console.log(`[DEBUG] Usuario: ${userEmail}`);
-      console.log(`[DEBUG] Carpeta ID: ${CONFIG_DRIVE.carpetaArchivos}`);
-
+      // ⚡ OPTIMIZACIÓN: Eliminar console.log innecesarios que ralentizan la ejecución
       const carpeta = DriveApp.getFolderById(CONFIG_DRIVE.carpetaArchivos);
-      console.log(`[DEBUG] Carpeta encontrada: ${carpeta.getName()}`);
-
       const blob = Utilities.newBlob(
         Utilities.base64Decode(solicitud.archivo_base64),
         "",
         solicitud.archivo_nombre
       );
-      console.log(`[DEBUG] Blob creado: ${blob.getBytes().length} bytes`);
-
       const archivo = carpeta.createFile(blob);
       urlArchivo = archivo.getUrl();
-      console.log(`✅ Archivo subido exitosamente: ${urlArchivo}`);
     } catch (driveError) {
       errorArchivo = `No se pudo subir el archivo adjunto. Error: ${driveError.message || driveError.toString()}`;
-      console.error('❌ Error al subir archivo a Drive:', driveError.toString());
-      console.error('❌ Tipo de error:', driveError.name);
-      console.error('❌ Stack:', driveError.stack);
+      Logger.log('Error al subir archivo a Drive: ' + driveError.toString());
       // Continuar sin archivo adjunto - la solicitud se creará de todas formas
     }
   }

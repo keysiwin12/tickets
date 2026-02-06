@@ -2292,6 +2292,10 @@
                 setTimeout(() => {
                     const items = dropdown.querySelectorAll('.notification-item.unread');
                     items.forEach(item => item.classList.remove('unread'));
+
+                    // ⚡ NUEVO: Vaciar notificaciones no leídas y actualizar badge
+                    notificacionesNoLeidas = [];
+                    actualizarBadgeNotificaciones();
                 }, 1000);
             }
         }
@@ -2308,6 +2312,11 @@
 
         // Abrir solicitud desde notificación
         function abrirNotificacion(idSolicitud) {
+            // ⚡ NUEVO: Eliminar esta notificación del array y actualizar badge
+            notificacionesNoLeidas = notificacionesNoLeidas.filter(n => n.id_solicitud !== idSolicitud);
+            actualizarBadgeNotificaciones();
+            actualizarDropdownNotificaciones();
+
             // Cerrar dropdown
             const dropdown = document.getElementById('notificationsDropdown');
             if (dropdown) dropdown.style.display = 'none';
