@@ -50,7 +50,6 @@ function getAsuntos(categoriaId = null) {
       id: row["id_asunto"],
       categoria_id: row["id_categoria"],
       nombre: row["nombre"],
-      descripcion: row["descripcion"],
       id_responsable: row["id_responsable"] || null  // Opcional: para excepciones
     }));
 
@@ -69,7 +68,7 @@ function getAsuntos(categoriaId = null) {
 // Obtener datos iniciales (cacheados)
 function getDatosIniciales() {
   const cache = CacheService.getScriptCache();
-  const key = "datos_iniciales_v2"; // nueva versión para evitar cache viejo
+  const key = "datos_iniciales_v3"; // v3: sin columna descripcion en asuntos
   const hit = cache.get(key);
   if (hit) return JSON.parse(hit);
 
