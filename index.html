@@ -352,14 +352,101 @@
             .container {
                 flex-direction: column;
             }
-            
+
             .sidebar {
                 width: 100%;
             }
-            
+
             .services-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* Drag & Drop Zone Styles */
+        .drop-zone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone:hover {
+            border-color: #4a90e2;
+            background-color: #f0f7ff;
+        }
+
+        .drop-zone.dragging {
+            border-color: #4a90e2;
+            background-color: #e3f2fd;
+            border-width: 3px;
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #4a90e2;
+        }
+
+        .drop-zone-text {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .drop-zone-hint {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .drop-zone-file-info {
+            display: none;
+            padding: 20px;
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            border: 2px solid #4a90e2;
+        }
+
+        .drop-zone-file-info.active {
+            display: block;
+        }
+
+        .drop-zone-file-name {
+            font-size: 16px;
+            color: #1976d2;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .drop-zone-file-size {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-remove {
+            background-color: #fff;
+            border: 1px solid #cbd5e0;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .drop-zone-remove:hover {
+            background-color: #fee;
+            border-color: #f87171;
+            color: #dc2626;
         }
     </style>
 </head>
@@ -950,29 +1037,22 @@
                         <!-- Campos dinámicos del servicio -->
                         <div id="camposDinamicos"></div>
 
-                        <!-- Campo Archivo (opcional para todos) -->
+                        <!-- Campo Archivo con Drag & Drop -->
                         <div style="margin-bottom: 25px;">
-                            <label for="archivoServicio" style="
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 8px;
-                                color: #4a90e2;
-                                cursor: pointer;
-                                font-size: 14px;
-                                transition: color 0.2s;
-                            "
-                            onmouseover="this.style.color='#1976d2'"
-                            onmouseout="this.style.color='#4a90e2'">
-                                Adjuntar un archivo
-                                <span style="color: #9ca3af; font-size: 12px; font-weight: normal;">(Tamaño de archivo < 40 MB)</span>
-                            </label>
+                            <div id="dropZoneServicio" class="drop-zone">
+                                <div class="drop-zone-content">
+                                    <div class="drop-zone-icon">📎</div>
+                                    <div class="drop-zone-text">Arrastra un archivo aquí</div>
+                                    <div class="drop-zone-hint">o haz clic para seleccionar</div>
+                                    <div class="drop-zone-hint" style="margin-top: 5px; color: #9ca3af;">Tamaño máximo: 40 MB</div>
+                                </div>
+                            </div>
                             <input
                                 type="file"
                                 id="archivoServicio"
                                 style="display: none;"
-                                onchange="mostrarArchivoSeleccionado(this)"
                             >
-                            <div id="archivoInfo" style="margin-top: 10px; padding: 8px 12px; background-color: #e3f2fd; border-radius: 4px; font-size: 12px; color: #1976d2; display: none;"></div>
+                            <div id="fileInfoServicio" class="drop-zone-file-info"></div>
                         </div>
                     </div>
 
@@ -1143,6 +1223,11 @@
                     </div>
                 `;
             }
+
+            // Inicializar drag & drop zone para el archivo
+            setTimeout(() => {
+                initDropZone('dropZoneServicio', 'archivoServicio', 'fileInfoServicio');
+            }, 100);
         }
 
         //Asignaciones responsables
@@ -1415,6 +1500,129 @@
           } else {
             span.textContent = ""; // Borra si se quita el archivo
           }
+        }
+
+        // ========================================
+        // Funciones para Drag & Drop de archivos
+        // ========================================
+
+        /**
+         * Inicializar zona de drag & drop
+         * @param {string} dropZoneId - ID del elemento drop zone
+         * @param {string} fileInputId - ID del input file oculto
+         * @param {string} fileInfoId - ID del contenedor de info del archivo
+         */
+        function initDropZone(dropZoneId, fileInputId, fileInfoId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const fileInput = document.getElementById(fileInputId);
+            const fileInfo = document.getElementById(fileInfoId);
+
+            if (!dropZone || !fileInput) return;
+
+            // Prevenir comportamiento por defecto del navegador
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight al arrastrar sobre la zona
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragging');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragging');
+                }, false);
+            });
+
+            // Manejar drop
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    handleDroppedFile(files[0], fileInput, dropZone, fileInfo);
+                }
+            }, false);
+
+            // Click para abrir selector tradicional
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Cambio en input file tradicional
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files && fileInput.files[0]) {
+                    handleDroppedFile(fileInput.files[0], fileInput, dropZone, fileInfo);
+                }
+            });
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        /**
+         * Manejar archivo seleccionado o dropeado
+         */
+        function handleDroppedFile(file, fileInput, dropZone, fileInfo) {
+            // Validar tamaño (40 MB)
+            const maxSize = 40 * 1024 * 1024; // 40 MB en bytes
+            if (file.size > maxSize) {
+                mostrarNotificacion('El archivo es demasiado grande. Tamaño máximo: 40 MB', 'error');
+                return;
+            }
+
+            // Actualizar el input file con el archivo
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            // Mostrar info del archivo
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+
+            // Ocultar drop zone, mostrar file info
+            const dropZoneContent = dropZone.querySelector('.drop-zone-content');
+            if (dropZoneContent) dropZoneContent.style.display = 'none';
+
+            if (fileInfo) {
+                fileInfo.innerHTML = `
+                    <div class="drop-zone-file-name">
+                        <span>✓</span>
+                        <span>${file.name}</span>
+                    </div>
+                    <div class="drop-zone-file-size">${fileSize} MB</div>
+                    <button type="button" class="drop-zone-remove" onclick="removeFile('${dropZone.id}', '${fileInput.id}', '${fileInfo.id}')">
+                        Cambiar archivo
+                    </button>
+                `;
+                fileInfo.classList.add('active');
+            }
+        }
+
+        /**
+         * Remover archivo seleccionado
+         */
+        function removeFile(dropZoneId, fileInputId, fileInfoId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const fileInput = document.getElementById(fileInputId);
+            const fileInfo = document.getElementById(fileInfoId);
+
+            // Limpiar input
+            if (fileInput) fileInput.value = '';
+
+            // Ocultar file info, mostrar drop zone
+            if (fileInfo) {
+                fileInfo.classList.remove('active');
+                fileInfo.innerHTML = '';
+            }
+
+            const dropZoneContent = dropZone.querySelector('.drop-zone-content');
+            if (dropZoneContent) dropZoneContent.style.display = 'block';
         }
 
 
@@ -2176,17 +2384,28 @@ Para re-autorizar:
             </ul>
           </div>
           <input id="comentarioModal" class="form-control form-control-sm" placeholder="Comentario opcional" style="max-width:250px;">
-          <label class="btn btn-sm btn-outline-secondary mb-0" title="Adjuntar archivo">
-            <i class="bi bi-paperclip"></i>
-            <input type="file" id="archivoModal" hidden onchange="mostrarArchivoModalInfo()">
-          </label>
-          <small id="archivoModalInfo" class="text-muted"></small>
+
+          <!-- Drag & Drop Zone para Modal Responsable -->
+          <div style="flex: 1; max-width: 300px;">
+            <div id="dropZoneModal" class="drop-zone" style="padding: 15px; margin: 0;">
+              <div class="drop-zone-content">
+                <div style="font-size: 14px; color: #4a5568;">📎 Arrastra archivo o <span style="color: #4a90e2; text-decoration: underline;">selecciona</span></div>
+              </div>
+            </div>
+            <input type="file" id="archivoModal" style="display: none;">
+            <div id="fileInfoModal" class="drop-zone-file-info" style="margin-top: 5px; padding: 10px;"></div>
+          </div>
+
           <button class="btn btn-primary btn-sm" onclick="guardarEstadoDesdeModal('${solicitudModalActual.id_solicitud}')">Guardar</button>
         </div>
         <!-- DERECHA -->
         <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
       </div>`;
 
+    // Inicializar drag & drop zone para el modal del responsable
+    setTimeout(() => {
+      initDropZone('dropZoneModal', 'archivoModal', 'fileInfoModal');
+    }, 100);
   }
 
   // Guardar estado desde modal
@@ -2375,8 +2594,16 @@ Para re-autorizar:
             placeholder="Escribe tu comentario..." rows="2"></textarea>
         </div>
         <div class="mb-2">
-          <input type="file" id="archivoUsuario" class="form-control form-control-sm">
-          <div id="archivoUsuarioInfo" class="text-muted small mt-1"></div>
+          <div id="dropZoneUsuario" class="drop-zone" style="padding: 20px;">
+            <div class="drop-zone-content">
+              <div class="drop-zone-icon" style="font-size: 32px;">📎</div>
+              <div class="drop-zone-text" style="font-size: 14px;">Arrastra un archivo aquí</div>
+              <div class="drop-zone-hint">o haz clic para seleccionar</div>
+              <div class="drop-zone-hint" style="margin-top: 5px;">Tamaño máximo: 40 MB</div>
+            </div>
+          </div>
+          <input type="file" id="archivoUsuario" style="display: none;">
+          <div id="fileInfoUsuario" class="drop-zone-file-info"></div>
         </div>
         <div class="text-end">
           <button class="btn btn-primary btn-sm"
@@ -2398,35 +2625,14 @@ Para re-autorizar:
     `;
 
     document.getElementById('contenidoDetallesUsuario').innerHTML = html;
-  }
 
-  
-  // Zona para que el usuario agregue comentario/archivo si está en Proceso
-  if (solicitud.estado_actual === "En Proceso") {
-    html += `
-      <h6 class="text-primary mt-3">💬 Agregar comentario</h6>
-      <div class="mb-2">
-        <textarea id="comentarioUsuario" class="form-control" 
-          placeholder="Escribe tu comentario..." rows="2"></textarea>
-      </div>
-      <div class="mb-2">
-        <input type="file" id="archivoUsuario" class="form-control form-control-sm">
-        <div id="archivoUsuarioInfo" class="text-muted small mt-1"></div>
-      </div>
-      <div class="text-end">
-        <button class="btn btn-primary btn-sm"
-          onclick="enviarComentarioUsuario('${solicitud.id_solicitud}')">
-          ➕ Enviar comentario
-        </button>
-      </div>
-    `;
-  } else {
-    html += `
-      <div class="alert alert-warning mt-3">
-        ⚠️ Solo puedes agregar comentarios cuando la solicitud está en proceso.
-      </div>`;
+    // Inicializar drag & drop zone para el modal del usuario
+    if (solicitud.estado_actual === "En Proceso") {
+      setTimeout(() => {
+        initDropZone('dropZoneUsuario', 'archivoUsuario', 'fileInfoUsuario');
+      }, 100);
+    }
   }
-
 
   // --- Filtros MIS SOLICITUDES ---
   // Mostrar/ocultar card de filtros
