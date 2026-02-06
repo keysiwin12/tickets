@@ -1592,10 +1592,12 @@
           solicitudesAsignadasDirty = true;
 
           // 4) Llamada al servidor
+          const loadingId = mostrarToastLoading("Guardando cambios...");
+
           const enviar = (base64, nombreArchivo) => {
             google.script.run
               .withSuccessHandler(() => {
-                mostrarNotificacion("Sincronizado con el servidor ✅", "success");
+                cerrarToastLoading(loadingId, "Cambios guardados ✅", "success");
                 dropdownBtn.setAttribute("data-prev", nuevoEstado); // persistir como último estado válido
                 delete pendingUpdates[id];
                 btn.disabled = false;
@@ -1603,7 +1605,7 @@
                 marcarSolicitudDirty(id);
               })
               .withFailureHandler(err => {
-                mostrarNotificacion("Error al sincronizar: " + err.message, "error");
+                cerrarToastLoading(loadingId, "Error: " + err.message, "error");
                 // Rollback UI
                 cambiarEstadoUI(id, prevEstado);
                 if (solicitudesCache) {
@@ -1656,16 +1658,18 @@
           solicitudesAsignadasDirty = true;
 
           // 4) Llamada al servidor
+          const loadingId = mostrarToastLoading("Actualizando estado...");
+
           google.script.run
             .withSuccessHandler(() => {
-              mostrarNotificacion("Estado actualizado ✅", "success");
+              cerrarToastLoading(loadingId, "Estado actualizado ✅", "success");
               dropdownBtn.setAttribute("data-prev", nuevoEstado);
               delete pendingUpdates[id];
               btn.disabled = false;
               marcarSolicitudDirty(id);
             })
             .withFailureHandler(err => {
-              mostrarNotificacion("Error: " + err.message, "error");
+              cerrarToastLoading(loadingId, "Error: " + err.message, "error");
               // Rollback UI
               cambiarEstadoUI(id, prevEstado);
               if (solicitudesCache) {
@@ -2005,6 +2009,97 @@
                 notif.style.transform = 'translateX(400px)';
                 setTimeout(() => notif.remove(), 300);
             }, tipo === 'success' ? 1500 : 3000);
+        }
+
+        // ================================================================================
+        // 🔄 TOAST CON SPINNER PARA OPERACIONES LARGAS
+        // ================================================================================
+
+        let loadingToastId = null;
+
+        /**
+         * Muestra un toast con spinner que persiste hasta cerrarlo manualmente
+         * @param {string} mensaje - Mensaje a mostrar
+         * @returns {string} - ID del toast para poder cerrarlo después
+         */
+        function mostrarToastLoading(mensaje) {
+            // Cerrar toast anterior si existe
+            if (loadingToastId) {
+                cerrarToastLoading(loadingToastId);
+            }
+
+            const toastId = 'loading-toast-' + Date.now();
+            loadingToastId = toastId;
+
+            const notif = document.createElement('div');
+            notif.id = toastId;
+            notif.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10001;
+                background: #fff;
+                color: #333;
+                border: 2px solid #1976d2;
+                border-radius: 8px;
+                padding: 15px 20px;
+                font-size: 14px;
+                max-width: 350px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                transform: translateX(400px);
+                transition: transform 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            `;
+
+            // Crear spinner SVG
+            const spinner = `
+                <svg width="20" height="20" viewBox="0 0 50 50" style="flex-shrink: 0;">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#1976d2" stroke-width="5"
+                            stroke-dasharray="31.4 31.4" stroke-linecap="round">
+                        <animateTransform attributeName="transform" type="rotate"
+                                        from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            `;
+
+            notif.innerHTML = `
+                ${spinner}
+                <span style="flex: 1; font-weight: 500;">${mensaje}</span>
+            `;
+
+            document.body.appendChild(notif);
+            setTimeout(() => notif.style.transform = 'translateX(0)', 50);
+
+            return toastId;
+        }
+
+        /**
+         * Cierra el toast de loading y muestra resultado
+         * @param {string} toastId - ID del toast a cerrar
+         * @param {string} mensajeResultado - Mensaje de resultado (opcional)
+         * @param {string} tipo - Tipo: 'success' | 'error' | 'warning' (opcional)
+         */
+        function cerrarToastLoading(toastId, mensajeResultado = null, tipo = 'success') {
+            const toast = document.getElementById(toastId);
+            if (!toast) return;
+
+            // Animar salida
+            toast.style.transform = 'translateX(400px)';
+            setTimeout(() => {
+                toast.remove();
+                if (toastId === loadingToastId) {
+                    loadingToastId = null;
+                }
+            }, 300);
+
+            // Mostrar resultado si se proporciona
+            if (mensajeResultado) {
+                setTimeout(() => {
+                    mostrarNotificacion(mensajeResultado, tipo);
+                }, 350);
+            }
         }
 
         // ================================================================================
@@ -2351,8 +2446,8 @@
             // Volver al catálogo inmediatamente
             volverAlCatalogo();
 
-            // Mostrar notificación de procesamiento
-            mostrarNotificacion('Enviando solicitud...', 'info');
+            // 🔄 Mostrar toast con spinner (persiste hasta que termine)
+            const loadingId = mostrarToastLoading('Enviando solicitud...');
 
             if (archivo) {
                 const reader = new FileReader();
@@ -2370,6 +2465,9 @@
 
                     google.script.run
                         .withSuccessHandler((resultado) => {
+                            // 🔄 Cerrar toast de loading
+                            cerrarToastLoading(loadingId);
+
                             // Verificar si hubo problemas con permisos o archivo
                             if (resultado && resultado.error_archivo) {
                                 // Mostrar alerta específica de permisos
@@ -2419,7 +2517,8 @@ Por favor, ayúdame a resolver este problema de permisos.`;
                                     });
                                 }
                             } else {
-                                mostrarNotificacion("Solicitud enviada con archivo 👍", 'success');
+                                // 🔄 Cerrar con mensaje de éxito
+                                cerrarToastLoading(loadingId, "Solicitud enviada con archivo 👍", 'success');
                             }
 
                             solicitudesCache = null;
@@ -2429,6 +2528,9 @@ Por favor, ayúdame a resolver este problema de permisos.`;
                             .getSolicitudesPorUsuario();
                         })
                         .withFailureHandler(err => {
+                            // 🔄 Cerrar toast de loading
+                            cerrarToastLoading(loadingId);
+
                             // Error crítico - la solicitud no se creó
                             const mensajeError = err.message || err.toString();
 
@@ -2487,9 +2589,9 @@ Para re-autorizar:
                     .withSuccessHandler((resultado) => {
                         // Verificar si hubo advertencias (aunque sin archivo, puede haber otros problemas)
                         if (resultado && resultado.advertencia) {
-                            mostrarNotificacion("⚠️ " + resultado.advertencia, 'warning');
+                            cerrarToastLoading(loadingId, "⚠️ " + resultado.advertencia, 'warning');
                         } else {
-                            mostrarNotificacion("Solicitud enviada 👍", 'success');
+                            cerrarToastLoading(loadingId, "Solicitud enviada 👍", 'success');
                         }
 
                         solicitudesCache = null;
@@ -2499,6 +2601,9 @@ Para re-autorizar:
                           .getSolicitudesPorUsuario();
                     })
                     .withFailureHandler(err => {
+                        // 🔄 Cerrar toast de loading
+                        cerrarToastLoading(loadingId);
+
                         // Error crítico - la solicitud no se creó
                         const mensajeError = err.message || err.toString();
 
@@ -3097,10 +3202,12 @@ Para re-autorizar:
     solicitudesDirty = true;
     solicitudesAsignadasDirty = true;
 
+    const loadingId = mostrarToastLoading("Guardando cambios...");
+
     const enviar = (base64, nombreArchivo) => {
       google.script.run
         .withSuccessHandler(() => {
-          mostrarNotificacion("Estado actualizado ✅", "success");
+          cerrarToastLoading(loadingId, "Cambios guardados ✅", "success");
           btn.setAttribute("data-prev", nuevo);
           marcarSolicitudDirty(idSolicitud);
 
@@ -3109,7 +3216,7 @@ Para re-autorizar:
           if (archivoInput) archivoInput.value = "";
         })
         .withFailureHandler(err => {
-          mostrarNotificacion("Error: " + err.message, "error");
+          cerrarToastLoading(loadingId, "Error: " + err.message, "error");
         })
         .cambiarEstadoSolicitud(idSolicitud, nuevo, comentario, base64 || null, nombreArchivo || null);
     };

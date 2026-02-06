@@ -57,13 +57,26 @@ function crearSolicitud(solicitud) {
   solicitud.id_solicitud = id_solicitud;
   
   const nuevaFila = hoja.getLastRow() + 1;
-  // Recorre el mapa y escribe los valores donde correspondan
+
+  // ⚡ OPTIMIZACIÓN: Escribir todos los valores en una sola operación
+  // En lugar de múltiples setValue(), usamos setValues() con un array
+  const numColumnas = Math.max(...Object.values(mapaColumnas));
+  const filaCompleta = Array(numColumnas).fill("");
+
+  // Llenar el array con los valores en las posiciones correctas
   for (const campo in mapaColumnas) {
     if (solicitud[campo] !== undefined) {
-      hoja.getRange(nuevaFila, mapaColumnas[campo]).setValue(solicitud[campo]);
+      filaCompleta[mapaColumnas[campo] - 1] = solicitud[campo];
     }
   }
-  ordenarTablaPorFecha("solicitudes",8);
+
+  // Escribir toda la fila de una vez (mucho más rápido)
+  hoja.getRange(nuevaFila, 1, 1, numColumnas).setValues([filaCompleta]);
+
+  // ⚡ OPTIMIZACIÓN: No ordenar después de cada inserción
+  // El ordenamiento es costoso, se puede hacer periódicamente o por trigger
+  // Si es crítico, considerarinsert en la posición correcta en lugar de ordenar
+  // ordenarTablaPorFecha("solicitudes",8);
   cambiarEstadoSolicitud(id_solicitud, "Pendiente", "Solicitud creada","","")
   enviarCorreoConfirmacion(id_solicitud);
 
@@ -134,9 +147,17 @@ function cambiarEstadoSolicitud(id_solicitud, nuevoEstado, comentario, archivo_b
   // - Nuevo estado = "En Proceso" (guardar aunque no cambie en historial, pero no forzar update hoja)
   if (filaIdx !== -1) {
     if (estadoActual !== nuevoEstado) {
-      shSol.getRange(filaIdx, idxEst+1).setValue(nuevoEstado);
+      // ⚡ OPTIMIZACIÓN: Usar batch update si hay que actualizar fecha_cierre también
       if (idxFecCierre !== -1 && (nuevoEstado === "Completado" || nuevoEstado === "Cancelado")) {
-        shSol.getRange(filaIdx, idxFecCierre+1).setValue(now);
+        // Actualizar ambos campos en una sola operación
+        const minCol = Math.min(idxEst, idxFecCierre);
+        const maxCol = Math.max(idxEst, idxFecCierre);
+        const valores = Array(maxCol - minCol + 1).fill("");
+        valores[idxEst - minCol] = nuevoEstado;
+        valores[idxFecCierre - minCol] = now;
+        shSol.getRange(filaIdx, minCol + 1, 1, valores.length).setValues([valores]);
+      } else {
+        shSol.getRange(filaIdx, idxEst+1).setValue(nuevoEstado);
       }
     }
   }
