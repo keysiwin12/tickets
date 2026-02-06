@@ -2018,9 +2018,9 @@
 
         // Iniciar el sistema de notificaciones
         function iniciarNotificaciones() {
-            // Verificar cambios cada 40 segundos
+            // Verificar cambios cada 60 segundos
             if (pollingInterval) clearInterval(pollingInterval);
-            pollingInterval = setInterval(verificarActualizaciones, 40000); // 40 segundos
+            pollingInterval = setInterval(verificarActualizaciones, 60000); // 60 segundos
 
             // Primera verificación inmediata (sin notificación)
             verificarActualizaciones(true);

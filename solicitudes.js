@@ -476,7 +476,38 @@ function obtenerCambiosDesde(timestamp) {
 
     if (!shHist || !shSol) return [];
 
-    // Leer historial
+    // ⚡ Optimización: Cachear mapa de solicitudes por 90 segundos
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'notif_solicitudesMap';
+    let solicitudesMap = null;
+
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      solicitudesMap = JSON.parse(cached);
+    } else {
+      // Solo leer de Sheets si no está en cache
+      const solData = shSol.getDataRange().getValues();
+      const solHeaders = solData[0];
+      const idxSolId = solHeaders.indexOf('id_solicitud');
+      const idxSolUsuario = solHeaders.indexOf('id_usuario');
+      const idxSolResp = solHeaders.indexOf('id_responsable');
+      const idxAsunto = solHeaders.indexOf('id_asunto');
+
+      // Crear mapa de solicitudes para lookup rápido
+      solicitudesMap = {};
+      for (let i = 1; i < solData.length; i++) {
+        solicitudesMap[solData[i][idxSolId]] = {
+          id_usuario: solData[i][idxSolUsuario],
+          id_responsable: solData[i][idxSolResp],
+          id_asunto: solData[i][idxAsunto]
+        };
+      }
+
+      // Cachear por 90 segundos (mayor que el intervalo de polling de 60s)
+      cache.put(cacheKey, JSON.stringify(solicitudesMap), 90);
+    }
+
+    // Leer historial (siempre actualizado)
     const histData = shHist.getDataRange().getValues();
     if (histData.length <= 1) return []; // Solo headers
 
@@ -487,26 +518,11 @@ function obtenerCambiosDesde(timestamp) {
     const idxComentario = headers.indexOf('comentario');
     const idxResponsable = headers.indexOf('responsable');
 
-    // Obtener datos de solicitudes para verificar pertenencia
-    const solData = shSol.getDataRange().getValues();
-    const solHeaders = solData[0];
-    const idxSolId = solHeaders.indexOf('id_solicitud');
-    const idxSolUsuario = solHeaders.indexOf('id_usuario');
-    const idxSolResp = solHeaders.indexOf('id_responsable');
-    const idxAsunto = solHeaders.indexOf('id_asunto');
-
-    // Crear mapa de solicitudes para lookup rápido
-    const solicitudesMap = {};
-    for (let i = 1; i < solData.length; i++) {
-      solicitudesMap[solData[i][idxSolId]] = {
-        id_usuario: solData[i][idxSolUsuario],
-        id_responsable: solData[i][idxSolResp],
-        id_asunto: solData[i][idxAsunto]
-      };
-    }
-
     // Verificar si el usuario es responsable
     const responsableInfo = esResponsable();
+
+    // ⚡ Obtener mapa de asuntos UNA SOLA VEZ (ya está cacheado)
+    const mapaAsuntos = getMapaAsuntos();
 
     // Convertir timestamp a Date
     const fechaLimite = new Date(Number(timestamp));
@@ -533,8 +549,7 @@ function obtenerCambiosDesde(timestamp) {
             const comentario = histData[i][idxComentario] || '';
             const responsable = histData[i][idxResponsable] || '';
 
-            // Obtener nombre del asunto
-            const mapaAsuntos = getMapaAsuntos();
+            // Obtener nombre del asunto desde el mapa (ya cargado)
             const nombreAsunto = mapaAsuntos[solicitud.id_asunto] || solicitud.id_asunto;
 
             // Construir mensaje
