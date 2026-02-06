@@ -73,14 +73,28 @@ function crearSolicitud(solicitud) {
   // Escribir toda la fila de una vez (mucho más rápido)
   hoja.getRange(nuevaFila, 1, 1, numColumnas).setValues([filaCompleta]);
 
-  // ⚡ OPTIMIZACIÓN: No ordenar después de cada inserción
-  // El ordenamiento es costoso, se puede hacer periódicamente o por trigger
-  // Si es crítico, considerarinsert en la posición correcta en lugar de ordenar
-  // ordenarTablaPorFecha("solicitudes",8);
-  cambiarEstadoSolicitud(id_solicitud, "Pendiente", "Solicitud creada","","")
-  enviarCorreoConfirmacion(id_solicitud);
+  // ⚡ OPTIMIZACIÓN CRÍTICA: Escribir en historial de forma directa (sin llamar función completa)
+  // Esto evita la lectura completa de la hoja 'solicitudes' que hace cambiarEstadoSolicitud
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const shHist = ss.getSheetByName('historial_estados');
+  if (shHist) {
+    const id_hist = nextGlobalSeq_('historial_seq');
+    const now = new Date();
+    const responsable = Session.getActiveUser().getEmail();
+    const filaHist = [id_hist, id_solicitud, "Pendiente", now, responsable, "Solicitud creada", ""];
+    shHist.appendRow(filaHist);
+  }
 
-  // Retornar resultado con advertencia si hubo error con archivo
+  // ⚡ OPTIMIZACIÓN: Enviar email de forma asíncrona (no bloquear respuesta)
+  // Usamos PropertiesService como queue temporal
+  try {
+    enviarCorreoConfirmacionAsync(id_solicitud);
+  } catch (e) {
+    Logger.log("Error al encolar email: " + e);
+    // No fallar si el email no se puede enviar
+  }
+
+  // ✅ Retornar inmediatamente (sin esperar email)
   return {
     success: true,
     id_solicitud: id_solicitud,
@@ -126,48 +140,69 @@ function cambiarEstadoSolicitud(id_solicitud, nuevoEstado, comentario, archivo_b
   shHist.appendRow(filaHist);
 
   // 2) Decidir si actualizamos "solicitudes"
-  const vals = shSol.getDataRange().getValues();
-  const headers = vals[0];
-  const idxId  = 0;
-  const idxEst = headers.indexOf('estado_actual');
-  const idxFecCierre = headers.indexOf('fecha_cierre');
+  // ⚡ OPTIMIZACIÓN CRÍTICA: Usar TextFinder para búsqueda rápida en lugar de leer toda la hoja
+  const textFinder = shSol.createTextFinder(id_solicitud).matchEntireCell(true);
+  const searchResult = textFinder.findNext();
 
   let estadoActual = null;
   let filaIdx = -1;
-  for (let i = 1; i < vals.length; i++) {
-    if (String(vals[i][idxId]) === String(id_solicitud)) {
-      estadoActual = vals[i][idxEst];
-      filaIdx = i+1;
-      break;
+
+  if (searchResult) {
+    filaIdx = searchResult.getRow();
+    const headers = shSol.getRange(1, 1, 1, shSol.getLastColumn()).getValues()[0];
+    const idxEst = headers.indexOf('estado_actual');
+    const idxFecCierre = headers.indexOf('fecha_cierre');
+
+    // Leer solo el estado actual de esa fila (no toda la hoja)
+    if (idxEst !== -1) {
+      estadoActual = shSol.getRange(filaIdx, idxEst + 1).getValue();
+    }
+  } else {
+    // Fallback: Si TextFinder no encuentra, usar método tradicional (solo como backup)
+    const vals = shSol.getDataRange().getValues();
+    const headers = vals[0];
+    const idxId  = 0;
+    const idxEst = headers.indexOf('estado_actual');
+
+    for (let i = 1; i < vals.length; i++) {
+      if (String(vals[i][idxId]) === String(id_solicitud)) {
+        estadoActual = vals[i][idxEst];
+        filaIdx = i+1;
+        break;
+      }
     }
   }
 
   // ✅ Actualizar hoja solo si:
   // - Estado cambió (para cualquier estado), o
   // - Nuevo estado = "En Proceso" (guardar aunque no cambie en historial, pero no forzar update hoja)
-  if (filaIdx !== -1) {
-    if (estadoActual !== nuevoEstado) {
-      // ⚡ OPTIMIZACIÓN: Usar batch update si hay que actualizar fecha_cierre también
-      if (idxFecCierre !== -1 && (nuevoEstado === "Completado" || nuevoEstado === "Cancelado")) {
-        // Actualizar ambos campos en una sola operación
-        const minCol = Math.min(idxEst, idxFecCierre);
-        const maxCol = Math.max(idxEst, idxFecCierre);
-        const valores = Array(maxCol - minCol + 1).fill("");
-        valores[idxEst - minCol] = nuevoEstado;
-        valores[idxFecCierre - minCol] = now;
-        shSol.getRange(filaIdx, minCol + 1, 1, valores.length).setValues([valores]);
-      } else {
-        shSol.getRange(filaIdx, idxEst+1).setValue(nuevoEstado);
-      }
+  if (filaIdx !== -1 && estadoActual !== nuevoEstado) {
+    // Obtener índices de columnas para actualización
+    const headers = shSol.getRange(1, 1, 1, shSol.getLastColumn()).getValues()[0];
+    const idxEst = headers.indexOf('estado_actual');
+    const idxFecCierre = headers.indexOf('fecha_cierre');
+
+    // ⚡ OPTIMIZACIÓN: Usar batch update si hay que actualizar fecha_cierre también
+    if (idxFecCierre !== -1 && (nuevoEstado === "Completado" || nuevoEstado === "Cancelado")) {
+      // Actualizar ambos campos en una sola operación
+      const minCol = Math.min(idxEst, idxFecCierre);
+      const maxCol = Math.max(idxEst, idxFecCierre);
+      const valores = Array(maxCol - minCol + 1).fill("");
+      valores[idxEst - minCol] = nuevoEstado;
+      valores[idxFecCierre - minCol] = now;
+      shSol.getRange(filaIdx, minCol + 1, 1, valores.length).setValues([valores]);
+    } else {
+      shSol.getRange(filaIdx, idxEst+1).setValue(nuevoEstado);
     }
   }
 
-  // 3) Enviar correo si corresponde
+  // 3) Enviar correo si corresponde (asíncrono)
   if (nuevoEstado === "Completado" || nuevoEstado === "Cancelado") {
     try {
-      enviarCorreoCambioEstado(id_solicitud, nuevoEstado, comentario);
+      enviarCorreoCambioEstadoAsync(id_solicitud, nuevoEstado, comentario);
     } catch (e) {
-      console.error("Error al enviar correo de cambio de estado:", e);
+      Logger.log("Error al encolar correo de cambio de estado: " + e);
+      // No fallar si el email no se puede encolar
     }
   }
 
@@ -604,5 +639,115 @@ function obtenerCambiosDesde(timestamp) {
   } catch (error) {
     Logger.log('Error en obtenerCambiosDesde: ' + error.toString());
     return [];
+  }
+}
+
+// =======================================================
+// 📧 ENVÍO ASÍNCRONO DE EMAILS (NO BLOQUEAR RESPUESTA)
+// =======================================================
+
+/**
+ * Envía email de confirmación de forma asíncrona (fire-and-forget)
+ * No bloquea la respuesta al frontend
+ */
+function enviarCorreoConfirmacionAsync(id_solicitud) {
+  // Intentar enviar inmediatamente pero sin bloquear si falla
+  try {
+    // Ejecutar en background usando un trigger inmediato
+    ScriptApp.newTrigger('_procesarEmailConfirmacion')
+      .timeBased()
+      .after(100) // 100ms después (casi inmediato pero no bloquea)
+      .create();
+
+    // Guardar el ID en PropertiesService para que el trigger lo procese
+    const props = PropertiesService.getScriptProperties();
+    props.setProperty('pending_email_confirmacion', id_solicitud);
+  } catch (e) {
+    // Si no se puede crear trigger, intentar envío directo sin esperar
+    Logger.log('No se pudo crear trigger async, intentando envío directo: ' + e);
+    try {
+      enviarCorreoConfirmacion(id_solicitud);
+    } catch (emailError) {
+      Logger.log('Error al enviar email de confirmación: ' + emailError);
+      // No fallar - el email se pierde pero la solicitud está creada
+    }
+  }
+}
+
+/**
+ * Función que ejecuta el trigger para enviar el email
+ * NO llamar directamente, solo desde trigger
+ */
+function _procesarEmailConfirmacion() {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const id_solicitud = props.getProperty('pending_email_confirmacion');
+
+    if (id_solicitud) {
+      enviarCorreoConfirmacion(id_solicitud);
+      props.deleteProperty('pending_email_confirmacion');
+
+      // Eliminar el trigger usado
+      const triggers = ScriptApp.getProjectTriggers();
+      for (const trigger of triggers) {
+        if (trigger.getHandlerFunction() === '_procesarEmailConfirmacion') {
+          ScriptApp.deleteTrigger(trigger);
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log('Error al procesar email confirmación async: ' + e);
+  }
+}
+
+/**
+ * Envía email de cambio de estado de forma asíncrona
+ */
+function enviarCorreoCambioEstadoAsync(id_solicitud, nuevoEstado, comentario) {
+  try {
+    ScriptApp.newTrigger('_procesarEmailCambioEstado')
+      .timeBased()
+      .after(100)
+      .create();
+
+    const props = PropertiesService.getScriptProperties();
+    props.setProperty('pending_email_estado', JSON.stringify({
+      id_solicitud: id_solicitud,
+      estado: nuevoEstado,
+      comentario: comentario
+    }));
+  } catch (e) {
+    Logger.log('No se pudo crear trigger async para cambio estado: ' + e);
+    try {
+      enviarCorreoCambioEstado(id_solicitud, nuevoEstado, comentario);
+    } catch (emailError) {
+      Logger.log('Error al enviar email de cambio estado: ' + emailError);
+    }
+  }
+}
+
+/**
+ * Procesa email de cambio de estado desde trigger
+ */
+function _procesarEmailCambioEstado() {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const data = props.getProperty('pending_email_estado');
+
+    if (data) {
+      const parsed = JSON.parse(data);
+      enviarCorreoCambioEstado(parsed.id_solicitud, parsed.estado, parsed.comentario);
+      props.deleteProperty('pending_email_estado');
+
+      // Eliminar trigger
+      const triggers = ScriptApp.getProjectTriggers();
+      for (const trigger of triggers) {
+        if (trigger.getHandlerFunction() === '_procesarEmailCambioEstado') {
+          ScriptApp.deleteTrigger(trigger);
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log('Error al procesar email cambio estado async: ' + e);
   }
 }
