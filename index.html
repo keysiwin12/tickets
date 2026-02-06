@@ -2327,7 +2327,7 @@ Para re-autorizar:
           <table class="table table-sm">
             <tr><td><b>ID:</b></td><td>${solicitudModalActual.id_solicitud}</td></tr>
             <tr><td><b>Servicio:</b></td><td>${asunto}</td></tr>
-            <tr><td><b>Usuario:</b></td><td>${solicitudModalActual.id_usuario}</td></tr>
+            <tr><td><b>Usuario:</b></td><td>${solicitudModalActual.usuario_nombre_corto ? `${solicitudModalActual.usuario_nombre_corto} (${solicitudModalActual.id_usuario})` : solicitudModalActual.id_usuario}</td></tr>
             <tr><td><b>Estado:</b></td><td><span class="badge ${estadoColor(estado)}">${estadoIcono(estado)} ${estado}</span></td></tr>
             <tr><td><b>Creación:</b></td><td>${solicitudModalActual.fecha_creacion || ''}</td></tr>
             <tr><td><b>Cierre:</b></td><td>${solicitudModalActual.fecha_cierre || ''}</td></tr>

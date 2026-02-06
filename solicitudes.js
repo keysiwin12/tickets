@@ -314,6 +314,16 @@ function obtenerDetallesSolicitud(idSolicitud) {
     }
 
     // ---------------------------------------------------
+    // Enriquecer con datos del usuario desde cache
+    // ---------------------------------------------------
+    const mapaUsuarios = getMapaUsuarios();
+    const usuario = mapaUsuarios[solicitudData.id_usuario];
+    if (usuario) {
+      solicitudData.usuario_nombre_corto = usuario.nombre_corto;
+      solicitudData.usuario_cargo = usuario.cargo;
+    }
+
+    // ---------------------------------------------------
     // Historial de estados
     // ---------------------------------------------------
     const datosHistorial = sheetHistorial.getDataRange().getValues();

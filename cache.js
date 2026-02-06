@@ -69,3 +69,31 @@ function getMapaResponsables() {
   cache.put(cacheKey, JSON.stringify(mapa), 21600);
   return mapa;
 }
+
+function getMapaUsuarios() {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "mapaUsuarios";
+  const cached = cache.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const shUsuarios = ss.getSheetByName("usuarios");
+  if (!shUsuarios) return {};
+
+  const data = shUsuarios.getDataRange().getValues();
+  const headers = data[0];
+  const idxId = headers.indexOf("id_usuario");
+  const idxNombreCorto = headers.indexOf("Nombre Corto");
+  const idxCargo = headers.indexOf("Cargo");
+
+  let mapa = {};
+  for (let i = 1; i < data.length; i++) {
+    mapa[data[i][idxId]] = {
+      nombre_corto: data[i][idxNombreCorto],
+      cargo: data[i][idxCargo]
+    };
+  }
+
+  cache.put(cacheKey, JSON.stringify(mapa), 21600);
+  return mapa;
+}
