@@ -205,7 +205,7 @@ function agregarComentarioUsuario(id_solicitud, comentario, archivo_base64, arch
   return { ok: true };
 }
 
-// Obtener solicitudes creadas por el usuario logueado
+// Obtener solicitudes creadas por el usuario logueado (optimizado)
 function getSolicitudesPorUsuario() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const shSol = ss.getSheetByName("solicitudes");
@@ -215,13 +215,18 @@ function getSolicitudesPorUsuario() {
   const idx = getSolicitudIndexes();
   const mapaAsuntos = getMapaAsuntos();
 
-  const vals = shSol.getRange(2, 1, shSol.getLastRow() - 1, shSol.getLastColumn()).getValues();
+  const lastRow = shSol.getLastRow();
+  if (lastRow <= 1) return []; // Solo headers o hoja vacía
+
+  // 🚀 OPTIMIZACIÓN: Solo leer hasta la columna máxima necesaria (no todas las columnas)
+  const maxCol = Math.max(...Object.values(idx)) + 1;
+  const vals = shSol.getRange(2, 1, lastRow - 1, maxCol).getValues();
   const res = [];
 
   vals.forEach(row => {
     const email = String(row[idx.id_usuario] || "").toLowerCase().trim();
     if (email === userEmail) {
-      res.push(mapSolicitud(row, idx, mapaAsuntos)); // ✅ reutiliza helper
+      res.push(mapSolicitud(row, idx, mapaAsuntos));
     }
   });
 
@@ -231,7 +236,7 @@ function getSolicitudesPorUsuario() {
   return res;
 }
 
-// Obtener solicitudes asignadas al responsable logueado
+// Obtener solicitudes asignadas al responsable logueado (optimizado)
 function getSolicitudesPorResponsable() {
   const permiso = esResponsable();
   if (!permiso.es) return [];
@@ -243,12 +248,17 @@ function getSolicitudesPorResponsable() {
   const idx = getSolicitudIndexes();
   const mapaAsuntos = getMapaAsuntos();
 
-  const vals = shSol.getRange(2, 1, shSol.getLastRow() - 1, shSol.getLastColumn()).getValues();
+  const lastRow = shSol.getLastRow();
+  if (lastRow <= 1) return []; // Solo headers o hoja vacía
+
+  // 🚀 OPTIMIZACIÓN: Solo leer hasta la columna máxima necesaria
+  const maxCol = Math.max(...Object.values(idx)) + 1;
+  const vals = shSol.getRange(2, 1, lastRow - 1, maxCol).getValues();
   const res = [];
 
   vals.forEach(row => {
     if (String(row[idx.id_responsable]).trim() === String(permiso.id).trim()) {
-      res.push(mapSolicitud(row, idx, mapaAsuntos)); // ✅ usamos helper
+      res.push(mapSolicitud(row, idx, mapaAsuntos));
     }
   });
 
@@ -256,6 +266,48 @@ function getSolicitudesPorResponsable() {
   res.sort((a, b) => parseFecha(b.fecha_creacion) - parseFecha(a.fecha_creacion));
 
   return res;
+}
+
+// =======================================================
+// PAGINACIÓN: Obtener solicitudes con lazy loading
+// =======================================================
+
+// Obtener solicitudes del usuario con paginación
+function getSolicitudesPorUsuarioPaginado(page, limit) {
+  page = Number(page) || 1;
+  limit = Number(limit) || 20;
+
+  const allSolicitudes = getSolicitudesPorUsuario();
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  return {
+    solicitudes: allSolicitudes.slice(start, end),
+    total: allSolicitudes.length,
+    page: page,
+    limit: limit,
+    totalPages: Math.ceil(allSolicitudes.length / limit),
+    hasMore: end < allSolicitudes.length
+  };
+}
+
+// Obtener solicitudes del responsable con paginación
+function getSolicitudesPorResponsablePaginado(page, limit) {
+  page = Number(page) || 1;
+  limit = Number(limit) || 20;
+
+  const allSolicitudes = getSolicitudesPorResponsable();
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  return {
+    solicitudes: allSolicitudes.slice(start, end),
+    total: allSolicitudes.length,
+    page: page,
+    limit: limit,
+    totalPages: Math.ceil(allSolicitudes.length / limit),
+    hasMore: end < allSolicitudes.length
+  };
 }
 
 

@@ -668,6 +668,10 @@
         let solicitudesAsignadasCache = null;
         let solicitudesAsignadasDirty = true; // la primera vez, fuerza carga
 
+        // 🚀 Paginación
+        let paginacionMis = { page: 1, limit: 20, hasMore: false, loading: false, allData: [] };
+        let paginacionAsignadas = { page: 1, limit: 20, hasMore: false, loading: false, allData: [] };
+
         // Cache en cliente para detalles
         let detallesCache = {};   // { [id_solicitud]: { success, solicitud, historial } }
         let detallesDirty = {};   // { [id_solicitud]: true } → marcar como sucio cuando cambie algo
@@ -1233,24 +1237,64 @@
         //Asignaciones responsables
         function irASolicitudesAsignadas() {
           showView('asignadas');
-          if (solicitudesAsignadasCache && !solicitudesAsignadasDirty) {
-            // 👌 usar cache para mostrar rápido
-            mostrarSolicitudesAsignadas(solicitudesAsignadasCache);
-          } else {
-            // cargar si aún no hay cache o está marcado como dirty
+
+          // 🚀 PAGINACIÓN: Resetear al entrar a la vista
+          if (solicitudesAsignadasDirty || !solicitudesAsignadasCache) {
+            paginacionAsignadas.page = 1;
+            paginacionAsignadas.allData = [];
             document.getElementById('listaAsignadas').innerHTML = "<p>Cargando...</p>";
+
             google.script.run
               .withSuccessHandler(function(data) {
-                solicitudesAsignadasCache = data;
+                paginacionAsignadas.allData = data.solicitudes;
+                paginacionAsignadas.hasMore = data.hasMore;
+                solicitudesAsignadasCache = data.solicitudes;
                 solicitudesAsignadasDirty = false;
-                mostrarSolicitudesAsignadas(data);
+                mostrarSolicitudesAsignadas(solicitudesAsignadasCache);
+                actualizarBotonCargarMas('asignadas', data.hasMore);
               })
               .withFailureHandler(err => {
                 console.error(err);
                 document.getElementById('listaAsignadas').innerHTML = "<p>Error al cargar solicitudes asignadas.</p>";
               })
-              .getSolicitudesPorResponsable();
+              .getSolicitudesPorResponsablePaginado(1, 20);
+          } else {
+            mostrarSolicitudesAsignadas(solicitudesAsignadasCache);
+            actualizarBotonCargarMas('asignadas', paginacionAsignadas.hasMore);
           }
+        }
+
+        // 🚀 Cargar más solicitudes asignadas (paginación)
+        function cargarMasSolicitudesAsignadas() {
+          if (paginacionAsignadas.loading || !paginacionAsignadas.hasMore) return;
+
+          paginacionAsignadas.loading = true;
+          paginacionAsignadas.page++;
+
+          const btnCargarMas = document.getElementById('btnCargarMasAsignadas');
+          if (btnCargarMas) {
+            btnCargarMas.disabled = true;
+            btnCargarMas.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cargando...';
+          }
+
+          google.script.run
+            .withSuccessHandler(function(data) {
+              paginacionAsignadas.allData = paginacionAsignadas.allData.concat(data.solicitudes);
+              paginacionAsignadas.hasMore = data.hasMore;
+              paginacionAsignadas.loading = false;
+
+              solicitudesAsignadasCache = paginacionAsignadas.allData;
+              mostrarSolicitudesAsignadas(solicitudesAsignadasCache);
+              actualizarBotonCargarMas('asignadas', data.hasMore);
+            })
+            .withFailureHandler(err => {
+              console.error(err);
+              paginacionAsignadas.loading = false;
+              paginacionAsignadas.page--; // Revertir incremento
+              actualizarBotonCargarMas('asignadas', paginacionAsignadas.hasMore);
+              mostrarNotificacion('Error al cargar más solicitudes', 'error');
+            })
+            .getSolicitudesPorResponsablePaginado(paginacionAsignadas.page, 20);
         }
 
         //actualizar estado
@@ -1468,6 +1512,10 @@
                   <tbody>${rows}</tbody>
                 </table>
               </div>
+              <!-- 🚀 Botón Cargar Más Asignadas -->
+              <div style="padding: 15px; border-top: 1px solid #eee; text-align: center; background: #fafafa;">
+                <div id="cargarMasAsignadasContainer"></div>
+              </div>
             </div>
           `;
         }
@@ -1500,6 +1548,28 @@
           } else {
             span.textContent = ""; // Borra si se quita el archivo
           }
+        }
+
+        // ========================================
+        // 🚀 QUICK WIN: Debounce utility
+        // ========================================
+        /**
+         * Debounce: Retrasa la ejecución de una función hasta que pase un tiempo
+         * sin que se vuelva a llamar. Útil para evitar ejecuciones repetitivas.
+         * @param {Function} func - Función a ejecutar
+         * @param {number} wait - Tiempo de espera en ms
+         * @returns {Function} - Función debounced
+         */
+        function debounce(func, wait) {
+          let timeout;
+          return function executedFunction(...args) {
+            const later = () => {
+              clearTimeout(timeout);
+              func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+          };
         }
 
         // ========================================
@@ -1989,30 +2059,71 @@ Para re-autorizar:
       
       function irAMisSolicitudes() {
         showView('mis');
-        // Si hay cambios o no hay cache -> fetch
+
+        // 🚀 PAGINACIÓN: Resetear al entrar a la vista
         if (solicitudesDirty || !solicitudesCache) {
+          paginacionMis.page = 1;
+          paginacionMis.allData = [];
           document.getElementById('listaSolicitudes').innerHTML = "<p>Cargando...</p>";
           cargandoSolicitudes = true;
+
           google.script.run
-            .withSuccessHandler(function(solicitudes) {
-              solicitudesCache = solicitudes;
-              // aplicar optimismos pendientes sobre el cache
+            .withSuccessHandler(function(data) {
+              // Guardar datos completos para filtros
+              paginacionMis.allData = data.solicitudes;
+              paginacionMis.hasMore = data.hasMore;
+              solicitudesCache = data.solicitudes;
+
               aplicarPendientesSobreCache();
               solicitudesDirty = false;
               cargandoSolicitudes = false;
-              mostrarListaSolicitudes(solicitudesCache);
+              mostrarListaSolicitudes(solicitudesCache, false);
+              actualizarBotonCargarMas('mis', data.hasMore);
             })
             .withFailureHandler(err => {
               console.error(err);
               cargandoSolicitudes = false;
               document.getElementById('listaSolicitudes').innerHTML = "<p>Error al cargar solicitudes.</p>";
             })
-            .getSolicitudesPorUsuario();
+            .getSolicitudesPorUsuarioPaginado(1, 20);
         } else {
-          // aplicar optimismos pendientes sobre el cache (por si entras rápido)
           aplicarPendientesSobreCache();
-          mostrarListaSolicitudes(solicitudesCache);
+          mostrarListaSolicitudes(solicitudesCache, false);
+          actualizarBotonCargarMas('mis', paginacionMis.hasMore);
         }
+      }
+
+      // 🚀 Cargar más solicitudes (paginación)
+      function cargarMasSolicitudesMis() {
+        if (paginacionMis.loading || !paginacionMis.hasMore) return;
+
+        paginacionMis.loading = true;
+        paginacionMis.page++;
+
+        const btnCargarMas = document.getElementById('btnCargarMasMis');
+        if (btnCargarMas) {
+          btnCargarMas.disabled = true;
+          btnCargarMas.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Cargando...';
+        }
+
+        google.script.run
+          .withSuccessHandler(function(data) {
+            paginacionMis.allData = paginacionMis.allData.concat(data.solicitudes);
+            paginacionMis.hasMore = data.hasMore;
+            paginacionMis.loading = false;
+
+            solicitudesCache = paginacionMis.allData;
+            mostrarListaSolicitudes(solicitudesCache, false);
+            actualizarBotonCargarMas('mis', data.hasMore);
+          })
+          .withFailureHandler(err => {
+            console.error(err);
+            paginacionMis.loading = false;
+            paginacionMis.page--; // Revertir incremento
+            actualizarBotonCargarMas('mis', paginacionMis.hasMore);
+            mostrarNotificacion('Error al cargar más solicitudes', 'error');
+          })
+          .getSolicitudesPorUsuarioPaginado(paginacionMis.page, 20);
       }
 
       //mostrar solis
@@ -2125,12 +2236,15 @@ Para re-autorizar:
                     </table>
                 </div>
                 <div style="padding: 20px; border-top: 1px solid #eee; text-align: center; background: #fafafa;">
+                    <!-- 🚀 Botón Cargar Más -->
+                    <div id="cargarMasMisContainer" style="margin-bottom: 15px;"></div>
+
                     <button onclick="irACatalogo()" style="
-                        background: #1976d2; 
-                        color: white; 
-                        padding: 10px 20px; 
-                        border: none; 
-                        border-radius: 6px; 
+                        background: #1976d2;
+                        color: white;
+                        padding: 10px 20px;
+                        border: none;
+                        border-radius: 6px;
                         cursor: pointer;
                         font-size: 14px;
                         transition: background-color 0.2s;
@@ -2143,6 +2257,27 @@ Para re-autorizar:
 
         contenedor.innerHTML = html;
     }
+
+      // 🚀 Actualizar botón "Cargar más"
+      function actualizarBotonCargarMas(tipo, hasMore) {
+        const containerId = tipo === 'mis' ? 'cargarMasMisContainer' : 'cargarMasAsignadasContainer';
+        const container = document.getElementById(containerId);
+
+        if (!container) return;
+
+        if (hasMore) {
+          const funcionCargar = tipo === 'mis' ? 'cargarMasSolicitudesMis()' : 'cargarMasSolicitudesAsignadas()';
+          container.innerHTML = `
+            <button id="btnCargarMas${tipo === 'mis' ? 'Mis' : 'Asignadas'}"
+                    onclick="${funcionCargar}"
+                    class="btn btn-outline-primary">
+              ↓ Cargar más solicitudes
+            </button>
+          `;
+        } else {
+          container.innerHTML = '<small class="text-muted">No hay más solicitudes</small>';
+        }
+      }
 
       function showView(view) {
         // Oculta todo
