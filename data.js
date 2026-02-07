@@ -101,24 +101,3 @@ function getResponsables() {
     return [];
   }
 }
-
-// =======================================================
-// Obtener usuarios
-// =======================================================
-function getUsuarios() {
-  try {
-    const data = getRawData("usuarios");
-
-    return data.map(row => ({
-      id_usuario: row["id_usuario"],
-      nombre_corto: row["Nombre Corto"],
-      cargo: row["Cargo"]
-    }));
-  } catch (error) {
-    Logger.log("Error al obtener usuarios: " + error);
-    return [];
-  }
-}
-
-
-

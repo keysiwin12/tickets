@@ -20,17 +20,6 @@ function generarSolicitudId() {
 }
 
 
-// sort table
-function ordenarTablaPorFecha(tabla,colum_fecha) {
-  const hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tabla);
-  const ultimaFila = hoja.getLastRow();
-  if (ultimaFila <= 1) return; // solo hay encabezado, no hay nada que ordenar
-
-  const rango = hoja.getRange(2, 1, ultimaFila - 1, hoja.getLastColumn());
-  rango.sort({column: colum_fecha, ascending: false}); // descendente (más reciente primero)
-}
-
-
 function parseFecha(f) {
   if (f instanceof Date) return f;
   if (!f) return null;
@@ -45,13 +34,6 @@ function formatFecha(f) {
   return f || "";
 }
 
-function getMapaAsuntos() {
-  const asuntos = getAsuntos();
-  const mapa = {};
-  asuntos.forEach(a => { mapa[a.id] = a.nombre; });
-  return mapa;
-}
-
 function mapSolicitud(row, idx, mapaAsuntos) {
   return {
     id_solicitud: row[idx.id_solicitud],
@@ -63,36 +45,6 @@ function mapSolicitud(row, idx, mapaAsuntos) {
     fecha_cierre: formatFecha(row[idx.fecha_cierre]),
     documento: row[idx.documento] || ""
   };
-}
-
-
-// ⚠️ Actualmente no se usa en el proyecto.
-// Se deja como helper genérico para futuras consultas rápidas por ID.
-function obtenerDatosPorId(id, hoja) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(hoja);
-  const datos = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
-  if (datos.length < 2) return null;
-
-  const headers = datos[0];
-  const idBuscado = String(id).trim().toLowerCase(); // 👈 siempre texto y en minúsculas
-  Logger.log("Buscando ID: " + idBuscado);
-
-  for (let i = 1; i < datos.length; i++) {
-    const idCeldaRaw = datos[i][0];
-    const idCelda = String(idCeldaRaw).trim().toLowerCase(); // 👈 normalizado a minúsculas
-
-    Logger.log("Fila " + (i+1) + ": valor=" + idCeldaRaw + " → normalizado=" + idCelda);
-
-    if (idCelda === idBuscado) {
-      const fila = datos[i];
-      let resultado = {};
-      headers.forEach((columna, idx) => {
-        resultado[columna] = fila[idx];
-      });
-      return resultado;
-    }
-  }
-  return null;
 }
 
 

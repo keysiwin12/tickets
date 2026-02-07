@@ -125,8 +125,6 @@ function enviarCorreoConfirmacion(id_solicitud) {
       throw new Error(`No se encontró la solicitud con ID: ${id_solicitud}`);
     }
 
-    console.log(`[DEBUG] Solicitud encontrada. id_responsable: ${solicitud.id_responsable}, id_asunto: ${solicitud.id_asunto}, id_usuario: ${solicitud.id_usuario}`);
-
     // Enriquecer datos de la solicitud
     const asuntoMenu = mapas.asuntos[solicitud.id_asunto];
     solicitud.asuntoDescripcion = asuntoMenu?.nombre || "";
@@ -137,12 +135,8 @@ function enviarCorreoConfirmacion(id_solicitud) {
     const responsableMenu = mapas.responsables[solicitud.id_responsable];
     solicitud.responsable_csc = responsableMenu?.nombre || "";
 
-    console.log(`[DEBUG] Responsable encontrado: ${responsableMenu?.nombre}, correo: ${responsableMenu?.correo}`);
-
     const correoUsuario = solicitud.id_usuario;
     const correoResponsable = responsableMenu?.correo || null;
-
-    console.log(`[DEBUG] Correos - Usuario: ${correoUsuario}, Responsable: ${correoResponsable}`);
 
     if (!correoUsuario) {
       throw new Error(`No se encontró correo del usuario con ID: ${solicitud.id_usuario}`);
