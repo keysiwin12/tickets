@@ -2111,8 +2111,70 @@
         let pollingInterval = null;
         let notificacionSound = null; // Audio para notificación
 
+        // ================================================================================
+        // 💾 PERSISTENCIA DE NOTIFICACIONES (LocalStorage)
+        // ================================================================================
+
+        // Claves de localStorage
+        const STORAGE_KEYS = {
+            NOTIFICACIONES: 'cscdesk_notificaciones',
+            TIMESTAMP: 'cscdesk_ultimo_timestamp'
+        };
+
+        // Guardar notificaciones en localStorage
+        function guardarNotificacionesEnStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.NOTIFICACIONES, JSON.stringify(notificacionesNoLeidas));
+                localStorage.setItem(STORAGE_KEYS.TIMESTAMP, ultimoTimestamp.toString());
+            } catch (error) {
+                console.error('Error al guardar notificaciones en localStorage:', error);
+            }
+        }
+
+        // Cargar notificaciones desde localStorage
+        function cargarNotificacionesDesdeStorage() {
+            try {
+                // Cargar notificaciones
+                const notifGuardadas = localStorage.getItem(STORAGE_KEYS.NOTIFICACIONES);
+                if (notifGuardadas) {
+                    notificacionesNoLeidas = JSON.parse(notifGuardadas);
+                }
+
+                // Cargar timestamp
+                const timestampGuardado = localStorage.getItem(STORAGE_KEYS.TIMESTAMP);
+                if (timestampGuardado) {
+                    ultimoTimestamp = parseInt(timestampGuardado, 10);
+                }
+
+                // Actualizar UI con los datos cargados
+                actualizarBadgeNotificaciones();
+                actualizarDropdownNotificaciones();
+            } catch (error) {
+                console.error('Error al cargar notificaciones desde localStorage:', error);
+                // Si hay error, usar valores por defecto
+                notificacionesNoLeidas = [];
+                ultimoTimestamp = Date.now();
+            }
+        }
+
+        // Limpiar notificaciones del storage
+        function limpiarNotificacionesStorage() {
+            try {
+                localStorage.removeItem(STORAGE_KEYS.NOTIFICACIONES);
+                // No eliminamos el timestamp para mantener el histórico
+            } catch (error) {
+                console.error('Error al limpiar notificaciones:', error);
+            }
+        }
+
+        // ================================================================================
+        // 🔔 FUNCIONES DE NOTIFICACIONES
+        // ================================================================================
+
         // Iniciar el sistema de notificaciones
         function iniciarNotificaciones() {
+            // 💾 Cargar notificaciones guardadas antes de iniciar
+            cargarNotificacionesDesdeStorage();
             // Verificar cambios cada 60 segundos
             if (pollingInterval) clearInterval(pollingInterval);
             pollingInterval = setInterval(verificarActualizaciones, 60000); // 60 segundos
@@ -2167,6 +2229,9 @@
             // Actualizar badge y dropdown
             actualizarBadgeNotificaciones();
             actualizarDropdownNotificaciones();
+
+            // 💾 Guardar en localStorage
+            guardarNotificacionesEnStorage();
 
             // Marcar datos como sucios para forzar recarga
             solicitudesDirty = true;
@@ -2293,9 +2358,12 @@
                     const items = dropdown.querySelectorAll('.notification-item.unread');
                     items.forEach(item => item.classList.remove('unread'));
 
-                    // ⚡ NUEVO: Vaciar notificaciones no leídas y actualizar badge
+                    // ⚡ Vaciar notificaciones no leídas y actualizar badge
                     notificacionesNoLeidas = [];
                     actualizarBadgeNotificaciones();
+
+                    // 💾 Guardar en localStorage
+                    guardarNotificacionesEnStorage();
                 }, 1000);
             }
         }
@@ -2312,10 +2380,13 @@
 
         // Abrir solicitud desde notificación
         function abrirNotificacion(idSolicitud) {
-            // ⚡ NUEVO: Eliminar esta notificación del array y actualizar badge
+            // ⚡ Eliminar esta notificación del array y actualizar badge
             notificacionesNoLeidas = notificacionesNoLeidas.filter(n => n.id_solicitud !== idSolicitud);
             actualizarBadgeNotificaciones();
             actualizarDropdownNotificaciones();
+
+            // 💾 Guardar en localStorage
+            guardarNotificacionesEnStorage();
 
             // Cerrar dropdown
             const dropdown = document.getElementById('notificationsDropdown');
