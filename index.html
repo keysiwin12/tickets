@@ -1079,6 +1079,15 @@
         window.onload = function() {
           google.script.run
             .withSuccessHandler(function(data) {
+              console.log("📦 [obtenerDatosIniciales] Datos recibidos:", data);
+              console.log("📦 Categorías recibidas:", data.categorias ? data.categorias.length : 0);
+              console.log("📦 Asuntos recibidos:", data.asuntos ? data.asuntos.length : 0);
+
+              if (!data.asuntos || data.asuntos.length === 0) {
+                console.error("⚠️ WARNING: No se recibieron asuntos desde el servidor");
+                console.log("📋 Datos completos:", JSON.stringify(data, null, 2));
+              }
+
               categorias = data.categorias;
               asuntos = data.asuntos;
               mostrarCategorias();
